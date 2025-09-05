@@ -1,8 +1,4 @@
 {
-  "/api/notes/[id]/route": "app/api/notes/[id]/route.js",
-  "/api/notes/analyze/route": "app/api/notes/analyze/route.js",
-  "/api/notes/route": "app/api/notes/route.js",
   "/favicon.ico/route": "app/favicon.ico/route.js",
-  "/notes/[id]/page": "app/notes/[id]/page.js",
   "/page": "app/page.js"
 }

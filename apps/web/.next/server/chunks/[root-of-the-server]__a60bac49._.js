@@ -90,30 +90,30 @@ const SearchQuerySchema = __TURBOPACK__imported__module__$5b$project$5d2f$node_m
     })
 });
 async function analyzeNote(transcript) {
-    const prompt = `
-Analyze this note transcript and provide structured information:
+    const prompt = `You are an AI assistant that analyzes notes and extracts structured information.
 
-Transcript: "${transcript}"
+Note content: "${transcript}"
 
-Please provide:
-- A concise title for the note
-- A brief summary
-- Relevant tags (3-5 keywords)
-- Categories this note belongs to
-- Overall sentiment
-- Key points mentioned
+Please analyze this content and provide:
+1. A concise, descriptive title (not just the first few words)
+2. A brief summary that captures the main ideas
+3. 3-5 relevant tags/keywords
+4. Appropriate categories
+5. The overall sentiment
+6. Key points mentioned
 
-Be specific and relevant to the content.
-`;
+Make sure to actually analyze and summarize the content, not just repeat it.`;
     try {
+        console.log('Calling AI analysis with prompt:', prompt.substring(0, 200) + '...');
         const result = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$ai$2f$dist$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["generateObject"])({
             model: geminiFlash,
             schema: NoteAnalysisSchema,
             prompt
         });
+        console.log('AI analysis successful:', result.object);
         return result.object;
     } catch (error) {
-        console.error('Error analyzing note:', error);
+        console.error('AI analysis failed, using fallback:', error);
         // Fallback analysis
         return {
             title: transcript.split(' ').slice(0, 5).join(' ') + '...',
@@ -229,8 +229,22 @@ async function POST(request) {
                 status: 400
             });
         }
+        console.log('AI Analysis - Content received:', {
+            contentLength: content.length,
+            hasFileContent: content.includes('--- Content from'),
+            contentPreview: content.substring(0, 200) + (content.length > 200 ? '...' : ''),
+            fileContentSections: (content.match(/--- Content from .+? ---/g) || []).length,
+            fullContent: content
+        });
         // Use the existing AI analysis function
+        // Content now includes both user text and extracted file content
         const analysis = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$lib$2f$ai$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["analyzeNote"])(content);
+        console.log('AI Analysis - Result:', {
+            title: analysis.title,
+            tags: analysis.tags,
+            categories: analysis.categories,
+            summaryLength: analysis.summary?.length || 0
+        });
         return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json(analysis);
     } catch (error) {
         console.error('Error analyzing note:', error);

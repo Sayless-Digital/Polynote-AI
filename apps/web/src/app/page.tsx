@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTheme } from 'next-themes';
+import Image from 'next/image';
 import { NoteTaker } from '@/components/NoteTaker';
 import { NotesList } from '@/components/NotesList';
 import { AIChatInterface } from '@/components/AIChatInterface';
@@ -12,6 +14,7 @@ import { Button } from '@/components/ui/button';
 export default function Home() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { theme } = useTheme();
   const [activeView, setActiveView] = useState<'take' | 'review' | 'chat'>('take');
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
 
@@ -36,7 +39,16 @@ export default function Home() {
       <header className="border-b flex-shrink-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <h1 className="text-2xl font-bold">Polynote AI</h1>
+            <div className="flex items-center space-x-3">
+              <Image
+                src={theme === 'dark' ? '/polynote logo light.svg' : '/polynote logo dark.svg'}
+                alt="PolyNote Logo"
+                width={32}
+                height={32}
+                className="w-8 h-8"
+              />
+              <h1 className="text-2xl font-bold">PolyNote</h1>
+            </div>
             <div className="flex items-center space-x-4">
               <nav className="flex space-x-4">
                 <Button

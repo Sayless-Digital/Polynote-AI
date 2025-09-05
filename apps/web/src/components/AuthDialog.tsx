@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import { useTheme } from "next-themes"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -24,6 +26,7 @@ interface AuthDialogProps {
 }
 
 export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
+  const { theme } = useTheme()
   const [activeTab, setActiveTab] = useState("signin")
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -106,12 +109,21 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-center">
-            Welcome to PolyNote
-          </DialogTitle>
-          <DialogDescription className="text-center">
-            Sign in to your account or create a new one to get started
-          </DialogDescription>
+          <div className="flex flex-col items-center space-y-4">
+            <Image
+              src={theme === 'dark' ? '/polynote logo light.svg' : '/polynote logo dark.svg'}
+              alt="PolyNote Logo"
+              width={48}
+              height={48}
+              className="w-12 h-12"
+            />
+            <DialogTitle className="text-2xl font-bold text-center">
+              Welcome to PolyNote
+            </DialogTitle>
+            <DialogDescription className="text-center">
+              Sign in to your account or create a new one to get started
+            </DialogDescription>
+          </div>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

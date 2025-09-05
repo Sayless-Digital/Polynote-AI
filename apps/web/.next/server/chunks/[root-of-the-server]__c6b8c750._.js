@@ -58,6 +58,10 @@ __turbopack_async_result__();
 "use strict";
 
 __turbopack_context__.s([
+    "attachments",
+    ()=>attachments,
+    "attachmentsRelations",
+    ()=>attachmentsRelations,
     "noteSearches",
     ()=>noteSearches,
     "noteSearchesRelations",
@@ -101,13 +105,40 @@ const noteSearches = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_mo
     searchVector: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$drizzle$2d$orm$2f$pg$2d$core$2f$columns$2f$text$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["text"])('search_vector'),
     createdAt: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$drizzle$2d$orm$2f$pg$2d$core$2f$columns$2f$timestamp$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["timestamp"])('created_at').defaultNow().notNull()
 });
+const attachments = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$drizzle$2d$orm$2f$pg$2d$core$2f$table$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["pgTable"])('attachments', {
+    id: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$drizzle$2d$orm$2f$pg$2d$core$2f$columns$2f$uuid$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["uuid"])('id').primaryKey().defaultRandom(),
+    noteId: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$drizzle$2d$orm$2f$pg$2d$core$2f$columns$2f$uuid$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["uuid"])('note_id').references(()=>notes.id, {
+        onDelete: 'cascade'
+    }).notNull(),
+    filename: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$drizzle$2d$orm$2f$pg$2d$core$2f$columns$2f$text$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["text"])('filename').notNull(),
+    originalName: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$drizzle$2d$orm$2f$pg$2d$core$2f$columns$2f$text$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["text"])('original_name').notNull(),
+    size: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$drizzle$2d$orm$2f$pg$2d$core$2f$columns$2f$text$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["text"])('size').notNull(),
+    type: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$drizzle$2d$orm$2f$pg$2d$core$2f$columns$2f$text$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["text"])('type').notNull(),
+    url: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$drizzle$2d$orm$2f$pg$2d$core$2f$columns$2f$text$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["text"])('url').notNull(),
+    content: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$drizzle$2d$orm$2f$pg$2d$core$2f$columns$2f$text$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["text"])('content'),
+    createdAt: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$drizzle$2d$orm$2f$pg$2d$core$2f$columns$2f$timestamp$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["timestamp"])('created_at').defaultNow().notNull()
+}, (table)=>({
+        noteIdIdx: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$drizzle$2d$orm$2f$pg$2d$core$2f$indexes$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["index"])('attachments_note_id_idx').on(table.noteId),
+        createdAtIdx: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$drizzle$2d$orm$2f$pg$2d$core$2f$indexes$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["index"])('attachments_created_at_idx').on(table.createdAt)
+    }));
 const notesRelations = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$drizzle$2d$orm$2f$relations$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["relations"])(notes, ({ many })=>({
-        searches: many(noteSearches)
+        searches: many(noteSearches),
+        attachments: many(attachments)
     }));
 const noteSearchesRelations = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$drizzle$2d$orm$2f$relations$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["relations"])(noteSearches, ({ one })=>({
         note: one(notes, {
             fields: [
                 noteSearches.noteId
+            ],
+            references: [
+                notes.id
+            ]
+        })
+    }));
+const attachmentsRelations = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$drizzle$2d$orm$2f$relations$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["relations"])(attachments, ({ one })=>({
+        note: one(notes, {
+            fields: [
+                attachments.noteId
             ],
             references: [
                 notes.id
@@ -189,19 +220,21 @@ const SearchQuerySchema = __TURBOPACK__imported__module__$5b$project$5d2f$node_m
 });
 async function analyzeNote(transcript) {
     const prompt = `
-Analyze this note transcript and provide structured information:
+Analyze this note content and provide structured information. The content may include:
+1. User's typed note text
+2. File attachments with content in the format "--- Content from [filename] ---"
 
-Transcript: "${transcript}"
+Content: "${transcript}"
 
-Please provide:
-- A concise title for the note
-- A brief summary
-- Relevant tags (3-5 keywords)
-- Categories this note belongs to
+Please analyze ALL content (both user text and file attachments) and provide:
+- A concise title that captures the main theme (consider both user text and file content)
+- A brief summary that synthesizes the user's intent with the file content
+- Relevant tags (3-5 keywords) from both user text and file content
+- Categories this note belongs to based on the complete content
 - Overall sentiment
-- Key points mentioned
+- Key points mentioned across all content
 
-Be specific and relevant to the content.
+Focus on the user's intent and how the file content relates to it. If there are file attachments, consider them as part of the note's context and meaning.
 `;
     try {
         const result = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$ai$2f$dist$2f$index$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["generateObject"])({
@@ -377,7 +410,7 @@ async function GET(request) {
 async function POST(request) {
     try {
         const body = await request.json();
-        const { title, content, transcript, tags, categories } = body;
+        const { title, content, transcript, tags, categories, attachments: uploadedFiles, aiAnalysis } = body;
         if (!content?.trim()) {
             return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
                 error: 'Content is required'
@@ -385,32 +418,46 @@ async function POST(request) {
                 status: 400
             });
         }
-        // Always use AI to analyze the note and generate title/summary
-        let aiAnalysis = null;
-        if (content.trim()) {
+        // Use AI analysis from frontend if provided, otherwise do our own analysis
+        let finalAiAnalysis = aiAnalysis;
+        if (!finalAiAnalysis && content.trim()) {
             try {
                 const contentToAnalyze = transcript || content;
-                aiAnalysis = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$lib$2f$ai$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["analyzeNote"])(contentToAnalyze);
+                finalAiAnalysis = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$apps$2f$web$2f$src$2f$lib$2f$ai$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["analyzeNote"])(contentToAnalyze);
             } catch (aiError) {
                 console.error('AI analysis failed:', aiError);
             }
         }
         // Prepare the note data - prioritize AI-generated title and summary
         const noteData = {
-            title: aiAnalysis?.title || title || 'Untitled Note',
+            title: finalAiAnalysis?.title || title || 'Untitled Note',
             content,
             transcript: transcript || null,
-            summary: aiAnalysis?.summary || null,
-            tags: aiAnalysis?.tags || tags || [],
-            categories: aiAnalysis?.categories || categories || [],
-            metadata: aiAnalysis ? {
-                sentiment: aiAnalysis.sentiment,
-                keyPoints: aiAnalysis.keyPoints
+            summary: finalAiAnalysis?.summary || null,
+            tags: finalAiAnalysis?.tags || tags || [],
+            categories: finalAiAnalysis?.categories || categories || [],
+            metadata: finalAiAnalysis ? {
+                sentiment: finalAiAnalysis.sentiment,
+                keyPoints: finalAiAnalysis.keyPoints
             } : null
         };
         // Save to database
         const result = await __TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$db$2f$src$2f$index$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["db"].insert(__TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$db$2f$src$2f$schema$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["notes"]).values(noteData).returning();
-        return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json(result[0]);
+        const savedNote = result[0];
+        // Save file attachments if any
+        if (uploadedFiles && uploadedFiles.length > 0) {
+            const attachmentData = uploadedFiles.map((file)=>({
+                    noteId: savedNote.id,
+                    filename: file.filename,
+                    originalName: file.originalName,
+                    size: file.size.toString(),
+                    type: file.type,
+                    url: file.url,
+                    content: file.content || null
+                }));
+            await __TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$db$2f$src$2f$index$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__$3c$locals$3e$__["db"].insert(__TURBOPACK__imported__module__$5b$project$5d2f$packages$2f$db$2f$src$2f$schema$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["attachments"]).values(attachmentData);
+        }
+        return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json(savedNote);
     } catch (error) {
         console.error('Error creating note:', error);
         return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
