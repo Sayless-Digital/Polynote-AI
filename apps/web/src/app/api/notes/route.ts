@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@polynote/db';
-import { notes } from '@polynote/db';
+import { notes, attachments } from '@polynote/db';
 import { analyzeNote } from '@/lib/ai';
-import { sql, desc, and, or, ilike } from 'drizzle-orm';
+import { sql, desc, and, or, ilike, eq } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
   try {
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { title, content, transcript, tags, categories } = body;
+    const { title, content, transcript, tags, categories, attachments: uploadedFiles, aiAnalysis } = body;
 
     if (!content?.trim()) {
       return NextResponse.json(
@@ -74,13 +74,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Always use AI to analyze the note and generate title/summary
-    let aiAnalysis = null;
+    // Use AI analysis from frontend if provided, otherwise do our own analysis
+    let finalAiAnalysis = aiAnalysis;
     
-    if (content.trim()) {
+    if (!finalAiAnalysis && content.trim()) {
       try {
         const contentToAnalyze = transcript || content;
-        aiAnalysis = await analyzeNote(contentToAnalyze);
+        finalAiAnalysis = await analyzeNote(contentToAnalyze);
       } catch (aiError) {
         console.error('AI analysis failed:', aiError);
       }
@@ -88,22 +88,38 @@ export async function POST(request: NextRequest) {
 
     // Prepare the note data - prioritize AI-generated title and summary
     const noteData = {
-      title: aiAnalysis?.title || title || 'Untitled Note',
+      title: finalAiAnalysis?.title || title || 'Untitled Note',
       content,
       transcript: transcript || null,
-      summary: aiAnalysis?.summary || null,
-      tags: aiAnalysis?.tags || tags || [],
-      categories: aiAnalysis?.categories || categories || [],
-      metadata: aiAnalysis ? {
-        sentiment: aiAnalysis.sentiment,
-        keyPoints: aiAnalysis.keyPoints,
+      summary: finalAiAnalysis?.summary || null,
+      tags: finalAiAnalysis?.tags || tags || [],
+      categories: finalAiAnalysis?.categories || categories || [],
+      metadata: finalAiAnalysis ? {
+        sentiment: finalAiAnalysis.sentiment,
+        keyPoints: finalAiAnalysis.keyPoints,
       } : null,
     };
 
     // Save to database
     const result = await db.insert(notes).values(noteData).returning();
+    const savedNote = result[0];
 
-    return NextResponse.json(result[0]);
+    // Save file attachments if any
+    if (uploadedFiles && uploadedFiles.length > 0) {
+      const attachmentData = uploadedFiles.map((file: any) => ({
+        noteId: savedNote.id,
+        filename: file.filename,
+        originalName: file.originalName,
+        size: file.size.toString(),
+        type: file.type,
+        url: file.url,
+        content: file.content || null, // Store extracted content for search
+      }));
+
+      await db.insert(attachments).values(attachmentData);
+    }
+
+    return NextResponse.json(savedNote);
   } catch (error) {
     console.error('Error creating note:', error);
     return NextResponse.json(

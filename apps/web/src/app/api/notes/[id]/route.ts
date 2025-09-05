@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@polynote/db';
-import { notes } from '@polynote/db';
+import { notes, attachments } from '@polynote/db';
 import { eq } from 'drizzle-orm';
 
 export async function GET(
@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const noteId = params.id;
+    const noteId = await params.id;
 
     if (!noteId) {
       return NextResponse.json(
@@ -17,23 +17,36 @@ export async function GET(
       );
     }
 
-    const result = await db
+    // Fetch note with attachments
+    const noteResult = await db
       .select()
       .from(notes)
       .where(eq(notes.id, noteId))
       .limit(1);
 
-    if (result.length === 0) {
+    if (noteResult.length === 0) {
       return NextResponse.json(
         { error: 'Note not found' },
         { status: 404 }
       );
     }
 
+    // Fetch attachments for this note
+    const attachmentsResult = await db
+      .select()
+      .from(attachments)
+      .where(eq(attachments.noteId, noteId));
+
+    const note = noteResult[0];
+    const noteWithAttachments = {
+      ...note,
+      attachments: attachmentsResult,
+    };
+
     // Add cache headers for individual notes
-    const response = NextResponse.json(result[0]);
+    const response = NextResponse.json(noteWithAttachments);
     response.headers.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=600');
-    response.headers.set('ETag', `"note-${noteId}-${result[0].updatedAt}"`);
+    response.headers.set('ETag', `"note-${noteId}-${note.updatedAt}"`);
     
     return response;
   } catch (error) {
@@ -50,7 +63,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const noteId = params.id;
+    const noteId = await params.id;
     const body = await request.json();
     const { title, content, summary } = body;
 
@@ -101,7 +114,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const noteId = params.id;
+    const noteId = await params.id;
 
     if (!noteId) {
       return NextResponse.json(

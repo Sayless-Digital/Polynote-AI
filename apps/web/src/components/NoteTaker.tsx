@@ -42,6 +42,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+// File extraction is now handled server-side
 
 interface UseAutoResizeTextareaProps {
   minHeight: number;
@@ -160,6 +161,7 @@ const router = useRouter();
     size: number;
     type: string;
     file: File;
+    content?: string;
   }>>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -439,7 +441,7 @@ const router = useRouter();
 
   const processAndSaveNote = async (content: string) => {
     try {
-      // Step 1: Uploading files (if any)
+      // Step 1: Uploading files and extracting content (if any)
       let uploadedFiles: any[] = [];
       if (attachments.length > 0) {
         setThinkingState('Uploading files...');
@@ -453,15 +455,100 @@ const router = useRouter();
           });
           
           if (!response.ok) {
-            throw new Error(`Failed to upload ${attachment.name}`);
+            const errorData = await response.json().catch(() => ({}));
+            const errorMessage = errorData.details || errorData.error || `Failed to upload ${attachment.name}`;
+            throw new Error(errorMessage);
           }
           
-          return response.json();
+          const uploadResult = await response.json();
+          
+          // Extract content immediately after upload
+          let extractedContent = null;
+          try {
+            const extractFormData = new FormData();
+            extractFormData.append('file', attachment.file);
+            
+            const extractResponse = await fetch('/api/extract-content', {
+              method: 'POST',
+              body: extractFormData,
+            });
+            
+            if (extractResponse.ok) {
+              const extracted = await extractResponse.json();
+              console.log(`/Content extraction result for ${attachment.name}:`, {
+                success: extracted.success,
+                contentLength: extracted.content?.length || 0,
+                contentPreview: extracted.content?.substring(0, 100) || 'No content',
+                type: extracted.type
+              });
+              
+              if (extracted.success) {
+                extractedContent = extracted.content;
+                // Also update the local attachment object
+                attachment.content = extracted.content;
+                console.log(`Successfully extracted and stored content for ${attachment.name}`);
+              } else {
+                console.warn(`Content extraction failed for ${attachment.name}:`, extracted.error);
+              }
+            } else {
+              console.error(`Content extraction API failed for ${attachment.name}:`, extractResponse.status);
+            }
+          } catch (extractError) {
+            console.warn(`Failed to extract content from ${attachment.name}:`, extractError);
+          }
+          
+          // Add extracted content to the upload result
+          return {
+            ...uploadResult,
+            content: extractedContent,
+          };
         });
         
         uploadedFiles = await Promise.all(uploadPromises);
         await new Promise(resolve => setTimeout(resolve, 500));
+        
+        console.log('Uploaded files result:', uploadedFiles.map(file => ({
+          originalName: file.originalName,
+          hasContent: !!file.content,
+          contentLength: file.content?.length || 0,
+          contentPreview: file.content?.substring(0, 100) || 'No content',
+          fullFileObject: file
+        })));
       }
+      
+      // Extract text from files for analysis (use uploadedFiles which has the extracted content) - FIXED
+      let fileContent = '';
+      if (uploadedFiles.length > 0) {
+        setThinkingState('Processing file content...');
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        console.log('Processing uploadedFiles for AI analysis (FIXED):', uploadedFiles.length);
+        
+        for (const uploadedFile of uploadedFiles) {
+          console.log(`Processing uploaded file: ${uploadedFile.originalName}`, {
+            hasContent: !!uploadedFile.content,
+            contentLength: uploadedFile.content?.length || 0,
+            contentPreview: uploadedFile.content?.substring(0, 100) || 'No content'
+          });
+          
+          if (uploadedFile.content) {
+            fileContent += `\n\n${uploadedFile.content}`;
+          } else {
+            fileContent += `\n\n[No content extracted from ${uploadedFile.originalName}]`;
+          }
+        }
+      }
+
+      // Combine user content with file content
+      const combinedContent = content + fileContent;
+      
+      console.log('Content combination for AI analysis:', {
+        userContent: content,
+        fileContent: fileContent,
+        combinedLength: combinedContent.length,
+        hasFileContent: fileContent.length > 0,
+        fullCombinedContent: combinedContent
+      });
       
       // Step 2: Analyzing content
       setThinkingState('Analyzing content...');
@@ -482,36 +569,18 @@ const router = useRouter();
       // Step 6: Categorizing
       setThinkingState('Categorizing...');
       await new Promise(resolve => setTimeout(resolve, 400));
-      
-      // Extract text from files for analysis
-      let fileContent = '';
-      if (attachments.length > 0) {
-        setThinkingState('Extracting file content...');
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        for (const attachment of attachments) {
-          try {
-            // For text files, extract content directly
-            if (attachment.type.startsWith('text/') || 
-                attachment.name.endsWith('.txt') || 
-                attachment.name.endsWith('.md')) {
-              const text = await attachment.file.text();
-              fileContent += `\n\n--- Content from ${attachment.name} ---\n${text}`;
-            } else {
-              // For other files, add a placeholder
-              fileContent += `\n\n--- File: ${attachment.name} (${attachment.type}) ---\n[File content extraction not yet implemented for this file type]`;
-            }
-          } catch (error) {
-            console.error(`Error reading file ${attachment.name}:`, error);
-            fileContent += `\n\n--- File: ${attachment.name} ---\n[Error reading file content]`;
-          }
-        }
-      }
-
-      // Combine user content with file content
-      const combinedContent = content + fileContent;
 
       // Use AI to analyze the content and generate title, tags, categories via API
+      console.log('Sending to AI analysis API:', {
+        contentLength: combinedContent.length,
+        contentPreview: combinedContent.substring(0, 500),
+        hasFileContent: combinedContent.includes('--- Content from'),
+        fileSections: (combinedContent.match(/--- Content from .+? ---/g) || []).length,
+        fullContent: combinedContent
+      });
+      
+      console.log('About to send this exact content to AI:', combinedContent);
+      
       const analysisResponse = await fetch('/api/notes/analyze', {
         method: 'POST',
         headers: {
@@ -544,6 +613,7 @@ const router = useRouter();
           tags: analysis.tags,
           categories: analysis.categories,
           attachments: uploadedFiles,
+          aiAnalysis: analysis, // Send the complete AI analysis result
         }),
       });
 

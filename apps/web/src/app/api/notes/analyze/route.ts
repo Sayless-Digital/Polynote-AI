@@ -1,43 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { analyzeNote } from '@/lib/ai';
-import { extractTextFromFiles } from '@/lib/file-extraction';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { content, title, files } = body;
+    const { content, title } = body;
 
-    if (!content?.trim() && (!files || files.length === 0)) {
+    if (!content?.trim()) {
       return NextResponse.json(
-        { error: 'Content or files are required' },
+        { error: 'Content is required' },
         { status: 400 }
       );
     }
 
-    let finalContent = content || '';
+    console.log('AI Analysis - Content received:', {
+      contentLength: content.length,
+      hasFileContent: content.includes('--- Content from'),
+      contentPreview: content.substring(0, 200) + (content.length > 200 ? '...' : ''),
+      fileContentSections: (content.match(/--- Content from .+? ---/g) || []).length,
+      fullContent: content
+    });
 
-    // Process attached files if any
-    if (files && files.length > 0) {
-      try {
-        // Convert file data back to File objects for processing
-        const fileObjects = files.map((fileData: any) => {
-          const file = new File([fileData.content], fileData.name, { type: fileData.type });
-          return file;
-        });
+    // Use the existing AI analysis function
+    // Content now includes both user text and extracted file content
+    const analysis = await analyzeNote(content);
 
-        const { combinedText, supportedFiles, totalFiles } = await extractTextFromFiles(fileObjects);
-        
-        if (combinedText) {
-          finalContent += `\n\n--- Attached Files (${supportedFiles}/${totalFiles} processed) ---\n${combinedText}`;
-        }
-      } catch (fileError) {
-        console.error('Error processing files:', fileError);
-        // Continue with just the text content if file processing fails
-      }
-    }
-
-    // Use the existing AI analysis function with combined content
-    const analysis = await analyzeNote(finalContent);
+    console.log('AI Analysis - Result:', {
+      title: analysis.title,
+      tags: analysis.tags,
+      categories: analysis.categories,
+      summaryLength: analysis.summary?.length || 0
+    });
 
     return NextResponse.json(analysis);
   } catch (error) {

@@ -6,12 +6,14 @@ import { NoteTaker } from '@/components/NoteTaker';
 import { NotesList } from '@/components/NotesList';
 import { AIChatInterface } from '@/components/AIChatInterface';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { AuthDialog } from '@/components/AuthDialog';
 import { Button } from '@/components/ui/button';
 
 export default function Home() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [activeView, setActiveView] = useState<'take' | 'review' | 'chat'>('take');
+  const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
 
   // Initialize activeView from URL parameters
   useEffect(() => {
@@ -56,6 +58,12 @@ export default function Home() {
                   AI Chat
                 </Button>
               </nav>
+              <Button
+                variant="outline"
+                onClick={() => setIsAuthDialogOpen(true)}
+              >
+                Sign In
+              </Button>
               <ThemeToggle />
             </div>
           </div>
@@ -68,6 +76,12 @@ export default function Home() {
         {activeView === 'review' && <NotesList />}
         {activeView === 'chat' && <AIChatInterface />}
       </main>
+
+      {/* Auth Dialog */}
+      <AuthDialog 
+        open={isAuthDialogOpen} 
+        onOpenChange={setIsAuthDialogOpen} 
+      />
     </div>
   );
 }

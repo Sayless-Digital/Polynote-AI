@@ -9,8 +9,21 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { ArrowLeft, Calendar, Tag, Save, Trash2, Bot } from 'lucide-react';
+import { ArrowLeft, Calendar, Tag, Save, Trash2, Bot, FileText, Download, ChevronDown, ChevronRight } from 'lucide-react';
+
+interface Attachment {
+  id: string;
+  noteId: string;
+  filename: string;
+  originalName: string;
+  size: string;
+  type: string;
+  url: string;
+  content?: string;
+  createdAt: string;
+}
 
 interface Note {
   id: string;
@@ -24,6 +37,7 @@ interface Note {
     sentiment?: string;
     keyPoints?: string[];
   };
+  attachments?: Attachment[];
   createdAt: string;
   updatedAt: string;
 }
@@ -118,6 +132,14 @@ export default function ViewNotePage() {
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   const handleBack = () => {
@@ -810,6 +832,66 @@ export default function ViewNotePage() {
             />
           </CardContent>
         </Card>
+
+        {/* File Attachments */}
+        {note.attachments && note.attachments.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Attachments ({note.attachments.length})
+              </CardTitle>
+              <CardDescription>
+                Files attached to this note
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {note.attachments.map((attachment) => (
+                <Collapsible key={attachment.id} className="border rounded-lg">
+                  <div className="flex items-center justify-between w-full p-3 hover:bg-muted/50 transition-colors">
+                    <CollapsibleTrigger className="flex items-center gap-3 flex-1">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      <div className="text-left">
+                        <div className="font-medium">{attachment.originalName}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {formatFileSize(parseInt(attachment.size))} • {attachment.type}
+                        </div>
+                      </div>
+                    </CollapsibleTrigger>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.open(attachment.url, '_blank');
+                        }}
+                      >
+                        <Download className="h-3 w-3 mr-1" />
+                        Download
+                      </Button>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                    </div>
+                  </div>
+                  <CollapsibleContent className="px-3 pb-3">
+                    {attachment.content ? (
+                      <div className="mt-3 p-3 bg-muted/30 rounded-md">
+                        <div className="text-sm font-medium mb-2">File Content:</div>
+                        <div className="text-sm text-muted-foreground whitespace-pre-wrap max-h-60 overflow-y-auto">
+                          {attachment.content}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-3 p-3 bg-muted/30 rounded-md text-sm text-muted-foreground">
+                        No text content available for this file type.
+                      </div>
+                    )}
+                  </CollapsibleContent>
+                </Collapsible>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Transcript */}
         {note.transcript && (

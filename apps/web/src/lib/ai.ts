@@ -32,32 +32,32 @@ const SearchQuerySchema = z.object({
  * Analyze a note transcript and extract metadata
  */
 export async function analyzeNote(transcript: string) {
-  const prompt = `
-Analyze this note transcript and provide structured information:
+  const prompt = `You are an AI assistant that analyzes notes and extracts structured information.
 
-Transcript: "${transcript}"
+Note content: "${transcript}"
 
-Please provide:
-- A concise title for the note
-- A brief summary
-- Relevant tags (3-5 keywords)
-- Categories this note belongs to
-- Overall sentiment
-- Key points mentioned
+Please analyze this content and provide:
+1. A concise, descriptive title (not just the first few words)
+2. A brief summary that captures the main ideas
+3. 3-5 relevant tags/keywords
+4. Appropriate categories
+5. The overall sentiment
+6. Key points mentioned
 
-Be specific and relevant to the content.
-`;
+Make sure to actually analyze and summarize the content, not just repeat it.`;
 
   try {
+    console.log('Calling AI analysis with prompt:', prompt.substring(0, 200) + '...');
     const result = await generateObject({
       model: geminiFlash,
       schema: NoteAnalysisSchema,
       prompt,
     });
 
+    console.log('AI analysis successful:', result.object);
     return result.object;
   } catch (error) {
-    console.error('Error analyzing note:', error);
+    console.error('AI analysis failed, using fallback:', error);
     // Fallback analysis
     return {
       title: transcript.split(' ').slice(0, 5).join(' ') + '...',
