@@ -2,26 +2,22 @@
   "name": "polynote",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
-    "start": "next start",
-    "lint": "eslint"
+    "dev": "cd apps/web && npm run dev",
+    "dev:turbo": "cd apps/web && next dev --turbo",
+    "build": "cd apps/web && npm run build",
+    "start": "cd apps/web && npm run start",
+    "lint": "cd apps/web && npm run lint",
+    "db:generate": "cd packages/db && npm run db:generate",
+    "db:push": "cd packages/db && npm run db:push",
+    "db:migrate": "cd packages/db && npm run db:migrate",
+    "db:studio": "cd packages/db && npm run db:studio"
   },
   "dependencies": {
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "next": "15.5.2"
-  },
-  "devDependencies": {
-    "typescript": "^5",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
-    "eslint": "^9",
-    "eslint-config-next": "15.5.2",
-    "@eslint/eslintrc": "^3"
+    "@radix-ui/react-checkbox": "^1.3.3"
   }
 }
