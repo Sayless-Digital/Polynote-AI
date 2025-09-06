@@ -12,28 +12,58 @@ export interface DecryptedUserAISettings extends Omit<UserAISettings, 'apiKey'> 
 const ENCRYPTION_KEY = process.env.API_KEY_ENCRYPTION_KEY || 'default-encryption-key-change-in-production';
 const ALGORITHM = 'aes-256-gcm';
 
+// Derive key from password for AES-256-GCM
+function getKey(): Buffer {
+  return crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32);
+}
+
 /**
  * Encrypt API key for storage
  */
 function encryptApiKey(apiKey: string): string {
   const iv = crypto.randomBytes(16);
-  const cipher = crypto.createCipher(ALGORITHM, ENCRYPTION_KEY);
+  const key = getKey();
+  const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
+
   let encrypted = cipher.update(apiKey, 'utf8', 'hex');
   encrypted += cipher.final('hex');
-  return iv.toString('hex') + ':' + encrypted;
+
+  const authTag = cipher.getAuthTag();
+  return iv.toString('hex') + ':' + encrypted + ':' + authTag.toString('hex');
 }
 
 /**
- * Decrypt API key for use
+ * Decrypt API key for use (supports both old and new formats)
  */
 function decryptApiKey(encryptedApiKey: string): string {
   const parts = encryptedApiKey.split(':');
-  const iv = Buffer.from(parts[0], 'hex');
-  const encrypted = parts[1];
-  const decipher = crypto.createDecipher(ALGORITHM, ENCRYPTION_KEY);
-  let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-  decrypted += decipher.final('utf8');
-  return decrypted;
+
+  // Handle new format (3 parts: iv:encrypted:authTag)
+  if (parts.length === 3) {
+    const iv = Buffer.from(parts[0], 'hex');
+    const encrypted = parts[1];
+    const authTag = Buffer.from(parts[2], 'hex');
+    const key = getKey();
+
+    const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+    decipher.setAuthTag(authTag);
+
+    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
+  }
+
+  // Handle old format (2 parts: iv:encrypted) for backward compatibility
+  if (parts.length === 2) {
+    const iv = Buffer.from(parts[0], 'hex');
+    const encrypted = parts[1];
+    const decipher = crypto.createDecipher(ALGORITHM, Buffer.from(ENCRYPTION_KEY));
+    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
+  }
+
+  throw new Error('Invalid encrypted API key format');
 }
 
 /**

@@ -116,7 +116,17 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 
 export async function getUserByEmailWithPassword(email: string): Promise<(User & { passwordHash: string }) | null> {
   const [user] = await db
-    .select()
+    .select({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      emailVerified: users.emailVerified,
+      avatar: users.avatar,
+      preferences: users.preferences,
+      createdAt: users.createdAt,
+      updatedAt: users.updatedAt,
+      passwordHash: users.passwordHash,
+    })
     .from(users)
     .where(eq(users.email, email))
     .limit(1);

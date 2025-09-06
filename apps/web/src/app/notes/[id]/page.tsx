@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useTheme } from 'next-themes';
+import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,7 +13,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { ArrowLeft, Calendar, Tag, Save, Trash2, Bot, FileText, Download, ChevronDown, ChevronRight } from 'lucide-react';
+import { UserCard } from '@/components/UserCard';
+import { useAuth } from '@/hooks/useAuth';
+import { ArrowLeft, Calendar, Tag, Save, Trash2, Bot, FileText, Download, ChevronDown, ChevronRight, PenTool, MessageSquare } from 'lucide-react';
 
 interface Attachment {
   id: string;
@@ -48,6 +52,9 @@ export default function ViewNotePage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { theme } = useTheme();
+  const { user, isAuthenticated, signOut } = useAuth();
+  const [mounted, setMounted] = useState(false);
   const [note, setNote] = useState<Note | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -70,6 +77,11 @@ export default function ViewNotePage() {
   const summaryRef = useRef<HTMLDivElement>(null);
 
   const noteId = params.id as string;
+
+  // Prevent hydration mismatch by only rendering theme-dependent content after mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Update content only when note changes, not on every render
   useEffect(() => {
@@ -528,7 +540,7 @@ export default function ViewNotePage() {
             </div>
 
             {/* Content Skeleton */}
-            <Card className="bg-card/80 backdrop-blur-2xl border-border/10 shadow-2xl">
+            <Card className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
               <CardHeader>
                 <Skeleton className="h-8 w-3/4" />
                 <Skeleton className="h-4 w-1/2" />
@@ -591,7 +603,7 @@ export default function ViewNotePage() {
               <h1 className="text-2xl font-bold">Error</h1>
             </div>
             
-            <Card className="bg-card/80 backdrop-blur-2xl border-border/10 shadow-2xl">
+            <Card className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
               <CardContent className="p-8 text-center">
                 <p className="text-muted-foreground mb-4">
                   {error || 'Note not found'}
@@ -609,33 +621,86 @@ export default function ViewNotePage() {
   }
 
   return (
-    <div className="h-screen w-screen bg-background/10 backdrop-blur-[1px] flex flex-col overflow-hidden">
+    <div className="h-screen w-screen bg-background/10 backdrop-blur-[1px] flex flex-col overflow-hidden relative">
+      {/* Animated Background - Full Screen */}
+      <div className="fixed inset-0 h-full w-full overflow-hidden pointer-events-none">
+        {/* Primary gradient orb */}
+        <div className="absolute top-0 left-1/4 h-96 w-96 rounded-full mix-blend-normal opacity-30 bg-gradient-to-br from-purple-400 via-purple-600 to-pink-400 animate-float-1" />
+
+        {/* Secondary gradient orb */}
+        <div className="absolute right-1/4 bottom-0 h-96 w-96 rounded-full mix-blend-normal opacity-25 bg-gradient-to-br from-blue-400 via-cyan-400 to-green-400 animate-float-2" />
+
+        {/* Tertiary gradient orb */}
+        <div className="absolute top-1/4 right-1/3 h-64 w-64 rounded-full mix-blend-normal opacity-20 bg-gradient-to-br from-pink-400 via-yellow-400 to-red-400 animate-float-3" />
+
+        {/* Additional floating orbs */}
+        <div className="absolute top-1/2 left-1/6 h-48 w-48 rounded-full mix-blend-normal opacity-15 bg-gradient-to-br from-teal-200 via-pink-200 to-purple-300 animate-float-4" />
+
+        <div className="absolute bottom-1/3 left-1/2 h-56 w-56 rounded-full mix-blend-normal opacity-18 bg-gradient-to-br from-orange-200 via-pink-300 to-red-300 animate-float-5" />
+      </div>
+
       {/* Header */}
-      <header className="border-b/10 bg-background/5 backdrop-blur-[1px] flex-shrink-0">
+      <header className="border-b/10 bg-background/5 backdrop-blur-[1px] flex-shrink-0 relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <h1 className="text-2xl font-bold">Polynote AI</h1>
-            <div className="flex items-center space-x-4">
+          <div className="flex items-center h-16">
+            {/* Left side - Logo */}
+            <div className="flex items-center space-x-3 flex-shrink-0">
+              {mounted ? (
+                <Image
+                  src={theme === 'dark' ? '/polynote logo light.svg' : '/polynote logo dark.svg'}
+                  alt="PolyNote Logo"
+                  width={48}
+                  height={48}
+                  className="w-12 h-12"
+                />
+              ) : (
+                <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              )}
+              <h1 className="text-2xl font-bold">PolyNote</h1>
+            </div>
+            
+            {/* Center - Navigation */}
+            <div className="flex-1 flex justify-center">
               <nav className="flex space-x-4">
                 <Button
                   variant="ghost"
                   onClick={() => handleNavigation('take')}
+                  className="flex items-center gap-2"
                 >
+                  <PenTool className="h-4 w-4" />
                   Take Notes
                 </Button>
                 <Button
                   variant="ghost"
                   onClick={() => handleNavigation('review')}
+                  className="flex items-center gap-2"
                 >
+                  <FileText className="h-4 w-4" />
                   Review Notes
                 </Button>
                 <Button
                   variant="ghost"
                   onClick={() => handleNavigation('chat')}
+                  className="flex items-center gap-2"
                 >
+                  <MessageSquare className="h-4 w-4" />
                   AI Chat
                 </Button>
               </nav>
+            </div>
+            
+            {/* Right side - User controls */}
+            <div className="flex items-center space-x-4 flex-shrink-0">
+              {isAuthenticated && user ? (
+                <UserCard user={user} onSignOut={signOut} />
+              ) : (
+                <Button
+                  variant="outline"
+                  onClick={() => router.push('/')}
+                >
+                  Sign In
+                </Button>
+              )}
               <ThemeToggle />
             </div>
           </div>
@@ -643,15 +708,15 @@ export default function ViewNotePage() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto p-4">
+      <main className="flex-1 overflow-auto p-4 relative z-10">
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Note Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="outline" size="icon" onClick={handleBack}>
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <div className="flex-1">
+          <div className="flex items-start gap-4">
+            <Button variant="outline" size="icon" onClick={handleBack} className="mt-1">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div className="flex-1 space-y-4">
+              <div>
                 <div className="mb-2">
                   <div
                     ref={titleRef}
@@ -706,27 +771,27 @@ export default function ViewNotePage() {
                   )}
                 </div>
               </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handleGenerateTitle}
-                disabled={saveState === 'saving'}
-              >
-                <Bot className="h-4 w-4 mr-2" />
-                Generate Title
-              </Button>
-              <SaveButton />
-              <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
+              
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleGenerateTitle}
+                  disabled={saveState === 'saving'}
+                >
+                  <Bot className="h-4 w-4 mr-2" />
+                  Generate Title
+                </Button>
+                <SaveButton />
+                <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </Button>
+                  </DialogTrigger>
+                <DialogContent className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
                   <DialogHeader>
                     <DialogTitle>Delete Note</DialogTitle>
                     <DialogDescription>
@@ -744,28 +809,47 @@ export default function ViewNotePage() {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+              </div>
             </div>
           </div>
 
         {/* Tags and Categories */}
         {(note.tags.length > 0 || note.categories.length > 0) && (
-          <div className="flex flex-wrap gap-2">
-            {note.tags.map((tag) => (
-              <Badge key={tag} variant="secondary" className="flex items-center gap-1">
-                <Tag className="h-3 w-3" />
-                {tag}
-              </Badge>
-            ))}
-            {note.categories.map((category) => (
-              <Badge key={category} variant="outline">
-                {category}
-              </Badge>
-            ))}
+          <div className="flex flex-wrap gap-3">
+            {note.tags.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                <span className="text-sm font-medium text-muted-foreground">Tags:</span>
+                {note.tags.map((tag) => (
+                  <Badge 
+                    key={tag} 
+                    variant="secondary" 
+                    className="flex items-center gap-1 bg-background/20 backdrop-blur-sm border-white/10 hover:bg-background/30 transition-colors"
+                  >
+                    <Tag className="h-3 w-3" />
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            )}
+            {note.categories.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                <span className="text-sm font-medium text-muted-foreground">Categories:</span>
+                {note.categories.map((category) => (
+                  <Badge 
+                    key={category} 
+                    variant="outline" 
+                    className="bg-background/10 backdrop-blur-sm border-white/20 hover:bg-background/20 transition-colors capitalize"
+                  >
+                    {category}
+                  </Badge>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         {/* AI Summary */}
-        <Card className="bg-card/80 backdrop-blur-2xl border-border/10 shadow-2xl">
+        <Card className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg flex items-center gap-2">
@@ -825,7 +909,7 @@ export default function ViewNotePage() {
         </Card>
 
         {/* Main Content */}
-        <Card className="bg-card/80 backdrop-blur-2xl border-border/10 shadow-2xl">
+        <Card className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
           <CardHeader>
             <CardTitle className="text-lg">Content</CardTitle>
             <CardDescription className="text-xs text-muted-foreground">
@@ -880,7 +964,7 @@ export default function ViewNotePage() {
 
         {/* File Attachments */}
         {note.attachments && note.attachments.length > 0 && (
-          <Card className="bg-card/80 backdrop-blur-2xl border-border/10 shadow-2xl">
+          <Card className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <FileText className="h-5 w-5" />
@@ -892,7 +976,7 @@ export default function ViewNotePage() {
             </CardHeader>
             <CardContent className="space-y-3">
               {note.attachments.map((attachment) => (
-                <Collapsible key={attachment.id} className="border border-border/10 rounded-lg bg-background/20 backdrop-blur-sm">
+                <Collapsible key={attachment.id} className="border border-white/20 rounded-lg bg-background/10 backdrop-blur-md shadow-lg">
                   <div className="flex items-center justify-between w-full p-3 hover:bg-muted/30 transition-colors">
                     <CollapsibleTrigger className="flex items-center gap-3 flex-1">
                       <FileText className="h-4 w-4 text-muted-foreground" />
@@ -920,7 +1004,7 @@ export default function ViewNotePage() {
                   </div>
                   <CollapsibleContent className="px-3 pb-3">
                     {attachment.content ? (
-                      <div className="mt-3 p-3 bg-muted/20 backdrop-blur-sm rounded-md border border-border/10">
+                      <div className="mt-3 p-3 bg-background/10 backdrop-blur-md rounded-md border border-white/20 shadow-sm">
                         <div className="text-sm font-medium mb-2">File Content:</div>
                         <div className="text-sm text-muted-foreground whitespace-pre-wrap max-h-60 overflow-y-auto">
                           {attachment.content}
@@ -940,7 +1024,7 @@ export default function ViewNotePage() {
 
         {/* Transcript */}
         {note.transcript && (
-          <Card className="bg-card/80 backdrop-blur-2xl border-border/10 shadow-2xl">
+          <Card className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
             <CardHeader>
               <CardTitle className="text-lg">Transcript</CardTitle>
               <CardDescription>
@@ -959,7 +1043,7 @@ export default function ViewNotePage() {
 
         {/* Metadata */}
         {note.metadata && (
-          <Card className="bg-card/80 backdrop-blur-2xl border-border/10 shadow-2xl">
+          <Card className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
             <CardHeader>
               <CardTitle className="text-lg">Analysis</CardTitle>
             </CardHeader>

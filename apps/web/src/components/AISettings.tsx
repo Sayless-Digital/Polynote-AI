@@ -224,7 +224,7 @@ export function AISettings() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center gap-3">
         <Settings className="h-8 w-8" />
         <div>
@@ -236,20 +236,20 @@ export function AISettings() {
       </div>
 
       {error && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
           <XCircle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
       <Tabs defaultValue="configuration" className="space-y-6">
-        <TabsList>
+        <TabsList className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
           <TabsTrigger value="configuration">Configuration</TabsTrigger>
           <TabsTrigger value="usage">Usage Statistics</TabsTrigger>
         </TabsList>
 
         <TabsContent value="configuration" className="space-y-6">
-          <Card>
+          <Card className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Key className="h-5 w-5" />
@@ -355,7 +355,7 @@ export function AISettings() {
               </div>
 
               {testResult && (
-                <Alert variant={testResult.success ? "default" : "destructive"}>
+                <Alert variant={testResult.success ? "default" : "destructive"} className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
                   {testResult.success ? (
                     <CheckCircle className="h-4 w-4" />
                   ) : (
@@ -375,7 +375,7 @@ export function AISettings() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Brain className="h-5 w-5" />
@@ -445,7 +445,7 @@ export function AISettings() {
         <TabsContent value="usage" className="space-y-6">
           {usage ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card>
+              <Card className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-2">
                     <BarChart3 className="h-4 w-4 text-muted-foreground" />
@@ -457,7 +457,7 @@ export function AISettings() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-2">
                     <Brain className="h-4 w-4 text-muted-foreground" />
@@ -469,14 +469,14 @@ export function AISettings() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-2">
                     <CheckCircle className="h-4 w-4 text-muted-foreground" />
                     <div>
                       <p className="text-sm font-medium">Success Rate</p>
                       <p className="text-2xl font-bold">
-                        {usage.totalRequests > 0 
+                        {usage.totalRequests > 0
                           ? Math.round((usage.successfulRequests / usage.totalRequests) * 100)
                           : 0}%
                       </p>
@@ -485,7 +485,7 @@ export function AISettings() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-2">
                     <Info className="h-4 w-4 text-muted-foreground" />
@@ -498,7 +498,7 @@ export function AISettings() {
               </Card>
             </div>
           ) : (
-            <Card>
+            <Card className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
               <CardContent className="p-6 text-center">
                 <p className="text-muted-foreground">No usage data available</p>
               </CardContent>
