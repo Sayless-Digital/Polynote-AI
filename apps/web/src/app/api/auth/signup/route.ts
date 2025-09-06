@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create user
-    const user = await createUser(name, email, password);
+    const user = await createUser(email, name, password);
 
     // Create email verification token
     const verificationToken = await createEmailVerificationToken(user.id);
@@ -44,13 +44,16 @@ export async function POST(request: NextRequest) {
       verificationUrl,
     });
 
-    if (!emailResult.success) {
-      console.error('Failed to send verification email:', emailResult.error);
-      // Don't fail the signup, but log the error
+    let message = 'Account created successfully.';
+    if (emailResult.success) {
+      message += ' Please check your email to verify your account.';
+    } else {
+      console.warn('Email verification not sent:', emailResult.error);
+      message += ' Email verification is not available (service not configured).';
     }
 
     return NextResponse.json({
-      message: 'Account created successfully. Please check your email to verify your account.',
+      message,
       user: {
         id: user.id,
         email: user.email,

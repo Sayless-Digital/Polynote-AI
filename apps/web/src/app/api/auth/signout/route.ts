@@ -4,7 +4,7 @@ import { clearSessionCookie } from '@/lib/auth';
 export async function POST(request: NextRequest) {
   try {
     // Clear session cookie
-    clearSessionCookie();
+    await clearSessionCookie();
 
     return NextResponse.json({ message: 'Signed out successfully' });
   } catch (error) {

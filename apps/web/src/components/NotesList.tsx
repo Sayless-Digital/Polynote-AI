@@ -101,6 +101,12 @@ export function NotesList() {
         throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
       }
       
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Server returned non-JSON response');
+      }
+      
       const data = await response.json();
       console.log('Successfully fetched notes:', data.length, 'items');
       setNotes(data);
@@ -369,7 +375,7 @@ export function NotesList() {
   if (error && !loading) {
     return (
       <div className="h-full w-full p-4 overflow-hidden">
-        <Card className="h-full flex flex-col">
+        <Card className="h-full flex flex-col bg-background/5 backdrop-blur-[1px] border-border/10">
           <CardHeader className="flex-shrink-0">
             <CardTitle className="flex items-center gap-2">
               <Search className="w-5 h-5" />
@@ -432,7 +438,7 @@ export function NotesList() {
   if (showInitialLoading) {
     return (
       <div className="h-full w-full p-4 overflow-hidden">
-        <Card className="h-full flex flex-col">
+        <Card className="h-full flex flex-col bg-background/5 backdrop-blur-[1px] border-border/10">
           <CardHeader className="flex-shrink-0">
             <CardTitle className="flex items-center gap-2">
               <Search className="w-5 h-5" />
@@ -457,7 +463,7 @@ export function NotesList() {
             <div className="flex-1 border rounded-lg overflow-hidden flex flex-col">
               <div className="flex-1 overflow-auto">
                 <table className="w-full">
-                  <thead className="bg-muted">
+                  <thead className="bg-muted/20 backdrop-blur-[1px]">
                     <tr>
                       <th className="text-left p-4 font-medium">Title</th>
                       <th className="text-left p-4 font-medium">Tags</th>
@@ -487,7 +493,7 @@ export function NotesList() {
 
   return (
     <div className="h-full w-full p-4 overflow-hidden">
-      <Card className="h-full flex flex-col">
+      <Card className="h-full flex flex-col bg-background/5 backdrop-blur-[1px] border-border/10">
         <CardHeader className="flex-shrink-0">
           <CardTitle className="flex items-center gap-2">
             <Search className="w-5 h-5" />
@@ -505,8 +511,7 @@ export function NotesList() {
                 <DropdownMenuTrigger asChild>
                   <Button 
                     variant="outline" 
-                    size="sm" 
-                    className="w-48 px-4 justify-between"
+                    className="w-48 px-4 justify-between h-10 border-white/20 bg-background/10 backdrop-blur-md hover:bg-background/20"
                     disabled={selectedNotes.size === 0}
                   >
                     <span className="flex items-center gap-2">
@@ -521,19 +526,25 @@ export function NotesList() {
                     <ChevronDown className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-48">
+                <DropdownMenuContent align="start" className="w-56 bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
                   <DropdownMenuItem 
                     onClick={() => handleBulkAction('delete')}
-                    className="text-destructive focus:text-destructive"
+                    className="text-destructive focus:text-destructive focus:bg-destructive/10"
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete Selected
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleBulkAction('tag')}>
+                  <DropdownMenuItem 
+                    onClick={() => handleBulkAction('tag')}
+                    className="focus:bg-accent/10"
+                  >
                     <Tag className="h-4 w-4 mr-2" />
                     Add Tag
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleBulkAction('category')}>
+                  <DropdownMenuItem 
+                    onClick={() => handleBulkAction('category')}
+                    className="focus:bg-accent/10"
+                  >
                     <Filter className="h-4 w-4 mr-2" />
                     Add Category
                   </DropdownMenuItem>
@@ -566,10 +577,10 @@ export function NotesList() {
                 <SelectTrigger className="w-full pl-10">
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
+                <SelectContent className="bg-background/10 backdrop-blur-[1px] border-border/10">
+                  <SelectItem value="all" className="focus:bg-accent/10">All Categories</SelectItem>
                   {allCategories.map(category => (
-                    <SelectItem key={category} value={category}>
+                    <SelectItem key={category} value={category} className="focus:bg-accent/10">
                       {category}
                     </SelectItem>
                   ))}
@@ -582,10 +593,10 @@ export function NotesList() {
                 <SelectTrigger className="w-full pl-10">
                   <SelectValue placeholder="All Tags" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Tags</SelectItem>
+                <SelectContent className="bg-background/10 backdrop-blur-[1px] border-border/10">
+                  <SelectItem value="all" className="focus:bg-accent/10">All Tags</SelectItem>
                   {allTags.map(tag => (
-                    <SelectItem key={tag} value={tag}>
+                    <SelectItem key={tag} value={tag} className="focus:bg-accent/10">
                       {tag}
                     </SelectItem>
                   ))}
@@ -600,7 +611,7 @@ export function NotesList() {
           <div className="flex-1 border rounded-lg overflow-hidden flex flex-col">
             <div className="flex-1 overflow-auto">
               <table className="w-full">
-                <thead className="bg-muted">
+                <thead className="bg-muted/20 backdrop-blur-[1px]">
                   <tr>
                     <th className="text-left p-4 font-medium w-12">
                       <Checkbox
@@ -625,7 +636,7 @@ export function NotesList() {
                             <Button 
                               onClick={() => fetchNotes(true)} 
                               variant="outline" 
-                              size="sm"
+                              className="border-white/20 bg-background/10 backdrop-blur-md hover:bg-background/20"
                             >
                               Refresh
                             </Button>
@@ -635,7 +646,7 @@ export function NotesList() {
                     </tr>
                   ) : (
                     notes.map((note) => (
-                      <tr key={note.id} className="border-t hover:bg-muted/50">
+                      <tr key={note.id} className="border-t/20 hover:bg-muted/10">
                         <td className="p-4 w-12">
                           <Checkbox
                             checked={selectedNotes.has(note.id)}
@@ -701,7 +712,7 @@ export function NotesList() {
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </DialogTrigger>
-                              <DialogContent>
+                              <DialogContent className="sm:max-w-md bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
                                 <DialogHeader>
                                   <DialogTitle>Delete Note</DialogTitle>
                                   <DialogDescription>
@@ -733,7 +744,7 @@ export function NotesList() {
           </div>
 
           {/* Results Summary */}
-          <div className="text-sm text-muted-foreground flex-shrink-0 flex items-center justify-between">
+          <div className="text-sm text-muted-foreground flex-shrink-0 flex items-center justify-center relative">
             <span>
               Showing {notes.length} note{notes.length !== 1 ? 's' : ''}
               {searchTerm && ` matching "${searchTerm}"`}
@@ -741,7 +752,7 @@ export function NotesList() {
               {selectedTag && selectedTag !== 'all' && ` with tag "${selectedTag}"`}
             </span>
             {loading && notes.length > 0 && (
-              <div className="flex items-center gap-2">
+              <div className="absolute right-0 flex items-center gap-2">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
                 <span className="text-xs">Updating...</span>
               </div>
@@ -752,7 +763,7 @@ export function NotesList() {
 
       {/* Bulk Action Dialogs */}
       <Dialog open={bulkActionDialogOpen} onOpenChange={setBulkActionDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
           <DialogHeader>
             <DialogTitle>
               {bulkActionType === 'delete' && 'Delete Selected Notes'}

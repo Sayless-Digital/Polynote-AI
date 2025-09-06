@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     const session = await createSession(userWithHash.id);
 
     // Set session cookie
-    setSessionCookie(session.token);
+    await setSessionCookie(session.token);
 
     return NextResponse.json({
       user: {

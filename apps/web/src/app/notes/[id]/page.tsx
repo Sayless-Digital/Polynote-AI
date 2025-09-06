@@ -100,12 +100,17 @@ export default function ViewNotePage() {
         });
         
         if (response.ok) {
-          const data = await response.json();
-          setNote(data);
-          setEditedTitle(data.title);
-          setEditedContent(data.content);
-          setEditedSummary(data.summary || '');
-          lastSavedRef.current = { title: data.title, content: data.content };
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const data = await response.json();
+            setNote(data);
+            setEditedTitle(data.title);
+            setEditedContent(data.content);
+            setEditedSummary(data.summary || '');
+            lastSavedRef.current = { title: data.title, content: data.content };
+          } else {
+            setError('Server returned invalid response format');
+          }
         } else if (response.status === 404) {
           setError('Note not found');
         } else {
@@ -192,24 +197,33 @@ export default function ViewNotePage() {
           });
 
           if (analysisResponse.ok) {
-            const analysis = await analysisResponse.json();
-            
-            // Always update title with AI-generated one
-            if (analysis.title && analysis.title.trim()) {
-              finalTitle = analysis.title.trim();
-              setEditedTitle(finalTitle);
-              if (titleRef.current) {
-                titleRef.current.textContent = finalTitle;
+            try {
+              const contentType = analysisResponse.headers.get('content-type');
+              if (contentType && contentType.includes('application/json')) {
+                const analysis = await analysisResponse.json();
+                
+                // Always update title with AI-generated one
+                if (analysis.title && analysis.title.trim()) {
+                  finalTitle = analysis.title.trim();
+                  setEditedTitle(finalTitle);
+                  if (titleRef.current) {
+                    titleRef.current.textContent = finalTitle;
+                  }
+                }
+                
+                // Always update summary with AI-generated one
+                if (analysis.summary && analysis.summary.trim()) {
+                  finalSummary = analysis.summary.trim();
+                  setEditedSummary(finalSummary);
+                  if (summaryRef.current) {
+                    summaryRef.current.textContent = finalSummary;
+                  }
+                }
+              } else {
+                console.warn('AI analysis returned non-JSON response');
               }
-            }
-            
-            // Always update summary with AI-generated one
-            if (analysis.summary && analysis.summary.trim()) {
-              finalSummary = analysis.summary.trim();
-              setEditedSummary(finalSummary);
-              if (summaryRef.current) {
-                summaryRef.current.textContent = finalSummary;
-              }
+            } catch (parseError) {
+              console.warn('Failed to parse AI analysis response:', parseError);
             }
           }
         } catch (aiError) {
@@ -231,14 +245,27 @@ export default function ViewNotePage() {
       });
 
       if (response.ok) {
-        const updatedNote = await response.json();
-        setNote(updatedNote);
-        lastSavedRef.current = { title: finalTitle, content: editedContent };
-        setHasChanges(false);
-        setSaveState('saved');
-        
-        // Reset to idle after showing saved state
-        setTimeout(() => setSaveState('idle'), 2000);
+        try {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const updatedNote = await response.json();
+            setNote(updatedNote);
+            lastSavedRef.current = { title: finalTitle, content: editedContent };
+            setHasChanges(false);
+            setSaveState('saved');
+            
+            // Reset to idle after showing saved state
+            setTimeout(() => setSaveState('idle'), 2000);
+          } else {
+            console.warn('Save note returned non-JSON response');
+            setSaveState('error');
+            setTimeout(() => setSaveState('idle'), 3000);
+          }
+        } catch (parseError) {
+          console.warn('Failed to parse save response:', parseError);
+          setSaveState('error');
+          setTimeout(() => setSaveState('idle'), 3000);
+        }
       } else {
         setSaveState('error');
         setTimeout(() => setSaveState('idle'), 3000);
@@ -295,13 +322,22 @@ export default function ViewNotePage() {
       });
 
       if (response.ok) {
-        const analysis = await response.json();
-        const newSummary = analysis.summary || '';
-        setEditedSummary(newSummary);
-        if (summaryRef.current) {
-          summaryRef.current.textContent = newSummary;
+        try {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const analysis = await response.json();
+            const newSummary = analysis.summary || '';
+            setEditedSummary(newSummary);
+            if (summaryRef.current) {
+              summaryRef.current.textContent = newSummary;
+            }
+            setHasChanges(true);
+          } else {
+            console.error('Failed to generate summary: non-JSON response');
+          }
+        } catch (parseError) {
+          console.error('Failed to parse summary response:', parseError);
         }
-        setHasChanges(true);
       } else {
         console.error('Failed to generate summary');
       }
@@ -330,14 +366,23 @@ export default function ViewNotePage() {
       });
 
       if (response.ok) {
-        const analysis = await response.json();
-        if (analysis.title && analysis.title.trim()) {
-          const newTitle = analysis.title.trim();
-          setEditedTitle(newTitle);
-          if (titleRef.current) {
-            titleRef.current.textContent = newTitle;
+        try {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const analysis = await response.json();
+            if (analysis.title && analysis.title.trim()) {
+              const newTitle = analysis.title.trim();
+              setEditedTitle(newTitle);
+              if (titleRef.current) {
+                titleRef.current.textContent = newTitle;
+              }
+              setHasChanges(true);
+            }
+          } else {
+            console.error('Failed to generate title: non-JSON response');
           }
-          setHasChanges(true);
+        } catch (parseError) {
+          console.error('Failed to parse title response:', parseError);
         }
       } else {
         console.error('Failed to generate title');
@@ -437,9 +482,9 @@ export default function ViewNotePage() {
 
   if (loading) {
     return (
-      <div className="h-screen w-screen bg-background flex flex-col overflow-hidden">
+      <div className="h-screen w-screen bg-background/10 backdrop-blur-[1px] flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="border-b flex-shrink-0">
+        <header className="border-b/10 bg-background/5 backdrop-blur-[1px] flex-shrink-0">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
               <h1 className="text-2xl font-bold">Polynote AI</h1>
@@ -483,7 +528,7 @@ export default function ViewNotePage() {
             </div>
 
             {/* Content Skeleton */}
-            <Card>
+            <Card className="bg-card/80 backdrop-blur-2xl border-border/10 shadow-2xl">
               <CardHeader>
                 <Skeleton className="h-8 w-3/4" />
                 <Skeleton className="h-4 w-1/2" />
@@ -503,9 +548,9 @@ export default function ViewNotePage() {
 
   if (error || !note) {
     return (
-      <div className="h-screen w-screen bg-background flex flex-col overflow-hidden">
+      <div className="h-screen w-screen bg-background/10 backdrop-blur-[1px] flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="border-b flex-shrink-0">
+        <header className="border-b/10 bg-background/5 backdrop-blur-[1px] flex-shrink-0">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
               <h1 className="text-2xl font-bold">Polynote AI</h1>
@@ -546,7 +591,7 @@ export default function ViewNotePage() {
               <h1 className="text-2xl font-bold">Error</h1>
             </div>
             
-            <Card>
+            <Card className="bg-card/80 backdrop-blur-2xl border-border/10 shadow-2xl">
               <CardContent className="p-8 text-center">
                 <p className="text-muted-foreground mb-4">
                   {error || 'Note not found'}
@@ -564,9 +609,9 @@ export default function ViewNotePage() {
   }
 
   return (
-    <div className="h-screen w-screen bg-background flex flex-col overflow-hidden">
+    <div className="h-screen w-screen bg-background/10 backdrop-blur-[1px] flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="border-b flex-shrink-0">
+      <header className="border-b/10 bg-background/5 backdrop-blur-[1px] flex-shrink-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <h1 className="text-2xl font-bold">Polynote AI</h1>
@@ -720,7 +765,7 @@ export default function ViewNotePage() {
         )}
 
         {/* AI Summary */}
-        <Card>
+        <Card className="bg-card/80 backdrop-blur-2xl border-border/10 shadow-2xl">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg flex items-center gap-2">
@@ -780,7 +825,7 @@ export default function ViewNotePage() {
         </Card>
 
         {/* Main Content */}
-        <Card>
+        <Card className="bg-card/80 backdrop-blur-2xl border-border/10 shadow-2xl">
           <CardHeader>
             <CardTitle className="text-lg">Content</CardTitle>
             <CardDescription className="text-xs text-muted-foreground">
@@ -835,7 +880,7 @@ export default function ViewNotePage() {
 
         {/* File Attachments */}
         {note.attachments && note.attachments.length > 0 && (
-          <Card>
+          <Card className="bg-card/80 backdrop-blur-2xl border-border/10 shadow-2xl">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <FileText className="h-5 w-5" />
@@ -847,8 +892,8 @@ export default function ViewNotePage() {
             </CardHeader>
             <CardContent className="space-y-3">
               {note.attachments.map((attachment) => (
-                <Collapsible key={attachment.id} className="border rounded-lg">
-                  <div className="flex items-center justify-between w-full p-3 hover:bg-muted/50 transition-colors">
+                <Collapsible key={attachment.id} className="border border-border/10 rounded-lg bg-background/20 backdrop-blur-sm">
+                  <div className="flex items-center justify-between w-full p-3 hover:bg-muted/30 transition-colors">
                     <CollapsibleTrigger className="flex items-center gap-3 flex-1">
                       <FileText className="h-4 w-4 text-muted-foreground" />
                       <div className="text-left">
@@ -875,14 +920,14 @@ export default function ViewNotePage() {
                   </div>
                   <CollapsibleContent className="px-3 pb-3">
                     {attachment.content ? (
-                      <div className="mt-3 p-3 bg-muted/30 rounded-md">
+                      <div className="mt-3 p-3 bg-muted/20 backdrop-blur-sm rounded-md border border-border/10">
                         <div className="text-sm font-medium mb-2">File Content:</div>
                         <div className="text-sm text-muted-foreground whitespace-pre-wrap max-h-60 overflow-y-auto">
                           {attachment.content}
                         </div>
                       </div>
                     ) : (
-                      <div className="mt-3 p-3 bg-muted/30 rounded-md text-sm text-muted-foreground">
+                      <div className="mt-3 p-3 bg-muted/20 backdrop-blur-sm rounded-md border border-border/10 text-sm text-muted-foreground">
                         No text content available for this file type.
                       </div>
                     )}
@@ -895,7 +940,7 @@ export default function ViewNotePage() {
 
         {/* Transcript */}
         {note.transcript && (
-          <Card>
+          <Card className="bg-card/80 backdrop-blur-2xl border-border/10 shadow-2xl">
             <CardHeader>
               <CardTitle className="text-lg">Transcript</CardTitle>
               <CardDescription>
@@ -914,7 +959,7 @@ export default function ViewNotePage() {
 
         {/* Metadata */}
         {note.metadata && (
-          <Card>
+          <Card className="bg-card/80 backdrop-blur-2xl border-border/10 shadow-2xl">
             <CardHeader>
               <CardTitle className="text-lg">Analysis</CardTitle>
             </CardHeader>

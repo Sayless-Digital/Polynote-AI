@@ -59,16 +59,76 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   handler satisfies AppPageConfig<"/">
 }
 
+// Validate ../../src/app/reset-password/page.tsx
+{
+  const handler = {} as typeof import("../../src/app/reset-password/page.js")
+  handler satisfies AppPageConfig<"/reset-password">
+}
+
+// Validate ../../src/app/settings/page.tsx
+{
+  const handler = {} as typeof import("../../src/app/settings/page.js")
+  handler satisfies AppPageConfig<"/settings">
+}
+
 // Validate ../../src/app/verify-email/page.tsx
 {
   const handler = {} as typeof import("../../src/app/verify-email/page.js")
   handler satisfies AppPageConfig<"/verify-email">
 }
 
+// Validate ../../src/app/api/ai-settings/route.ts
+{
+  const handler = {} as typeof import("../../src/app/api/ai-settings/route.js")
+  handler satisfies RouteHandlerConfig<"/api/ai-settings">
+}
+
+// Validate ../../src/app/api/ai-settings/test/route.ts
+{
+  const handler = {} as typeof import("../../src/app/api/ai-settings/test/route.js")
+  handler satisfies RouteHandlerConfig<"/api/ai-settings/test">
+}
+
+// Validate ../../src/app/api/analysis/categories/route.ts
+{
+  const handler = {} as typeof import("../../src/app/api/analysis/categories/route.js")
+  handler satisfies RouteHandlerConfig<"/api/analysis/categories">
+}
+
+// Validate ../../src/app/api/analysis/comprehensive/route.ts
+{
+  const handler = {} as typeof import("../../src/app/api/analysis/comprehensive/route.js")
+  handler satisfies RouteHandlerConfig<"/api/analysis/comprehensive">
+}
+
+// Validate ../../src/app/api/analysis/key-points/route.ts
+{
+  const handler = {} as typeof import("../../src/app/api/analysis/key-points/route.js")
+  handler satisfies RouteHandlerConfig<"/api/analysis/key-points">
+}
+
+// Validate ../../src/app/api/analysis/summary/route.ts
+{
+  const handler = {} as typeof import("../../src/app/api/analysis/summary/route.js")
+  handler satisfies RouteHandlerConfig<"/api/analysis/summary">
+}
+
+// Validate ../../src/app/api/auth/forgot-password/route.ts
+{
+  const handler = {} as typeof import("../../src/app/api/auth/forgot-password/route.js")
+  handler satisfies RouteHandlerConfig<"/api/auth/forgot-password">
+}
+
 // Validate ../../src/app/api/auth/me/route.ts
 {
   const handler = {} as typeof import("../../src/app/api/auth/me/route.js")
   handler satisfies RouteHandlerConfig<"/api/auth/me">
+}
+
+// Validate ../../src/app/api/auth/reset-password/route.ts
+{
+  const handler = {} as typeof import("../../src/app/api/auth/reset-password/route.js")
+  handler satisfies RouteHandlerConfig<"/api/auth/reset-password">
 }
 
 // Validate ../../src/app/api/auth/signin/route.ts
@@ -87,6 +147,12 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
 {
   const handler = {} as typeof import("../../src/app/api/auth/signup/route.js")
   handler satisfies RouteHandlerConfig<"/api/auth/signup">
+}
+
+// Validate ../../src/app/api/auth/validate-reset-token/route.ts
+{
+  const handler = {} as typeof import("../../src/app/api/auth/validate-reset-token/route.js")
+  handler satisfies RouteHandlerConfig<"/api/auth/validate-reset-token">
 }
 
 // Validate ../../src/app/api/auth/verify-email/route.ts

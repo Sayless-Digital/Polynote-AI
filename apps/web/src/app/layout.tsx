@@ -26,15 +26,34 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased relative`}
       >
+        {/* Animated Background - Full Screen */}
+        <div className="fixed inset-0 h-full w-full overflow-hidden pointer-events-none">
+          {/* Primary gradient orb */}
+          <div className="absolute top-0 left-1/4 h-96 w-96 rounded-full mix-blend-normal opacity-30 bg-gradient-to-br from-purple-400 via-purple-600 to-pink-400 animate-float-1" />
+          
+          {/* Secondary gradient orb */}
+          <div className="absolute right-1/4 bottom-0 h-96 w-96 rounded-full mix-blend-normal opacity-25 bg-gradient-to-br from-blue-400 via-cyan-400 to-green-400 animate-float-2" />
+          
+          {/* Tertiary gradient orb */}
+          <div className="absolute top-1/4 right-1/3 h-64 w-64 rounded-full mix-blend-normal opacity-20 bg-gradient-to-br from-pink-400 via-yellow-400 to-red-400 animate-float-3" />
+          
+          {/* Additional floating orbs */}
+          <div className="absolute top-1/2 left-1/6 h-48 w-48 rounded-full mix-blend-normal opacity-15 bg-gradient-to-br from-teal-200 via-pink-200 to-purple-300 animate-float-4" />
+          
+          <div className="absolute bottom-1/3 left-1/2 h-56 w-56 rounded-full mix-blend-normal opacity-18 bg-gradient-to-br from-orange-200 via-pink-300 to-red-300 animate-float-5" />
+        </div>
+        
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <div className="relative z-10">
+            {children}
+          </div>
         </ThemeProvider>
       </body>
     </html>

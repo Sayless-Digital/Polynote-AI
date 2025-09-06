@@ -165,7 +165,6 @@ const router = useRouter();
   }>>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [thinkingState, setThinkingState] = useState<string>('');
   const { textareaRef, adjustHeight } = useAutoResizeTextarea({
     minHeight: 60,
@@ -382,7 +381,17 @@ const router = useRouter();
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save note');
+        let errorMessage = 'Failed to save note';
+        try {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const errorData: { error?: string } = await response.json();
+            errorMessage = errorData.error || errorMessage;
+          }
+        } catch (parseError) {
+          console.warn('Failed to parse save error response as JSON:', parseError);
+        }
+        throw new Error(errorMessage);
       }
 
       const savedNote = await response.json();
@@ -405,15 +414,6 @@ const router = useRouter();
   };
 
 
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-    };
-  }, []);
 
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -455,7 +455,15 @@ const router = useRouter();
           });
           
           if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
+            let errorData: { details?: string; error?: string } = {};
+            try {
+              const contentType = response.headers.get('content-type');
+              if (contentType && contentType.includes('application/json')) {
+                errorData = await response.json();
+              }
+            } catch (parseError) {
+              console.warn('Failed to parse error response as JSON:', parseError);
+            }
             const errorMessage = errorData.details || errorData.error || `Failed to upload ${attachment.name}`;
             throw new Error(errorMessage);
           }
@@ -474,21 +482,25 @@ const router = useRouter();
             });
             
             if (extractResponse.ok) {
-              const extracted = await extractResponse.json();
-              console.log(`/Content extraction result for ${attachment.name}:`, {
-                success: extracted.success,
-                contentLength: extracted.content?.length || 0,
-                contentPreview: extracted.content?.substring(0, 100) || 'No content',
-                type: extracted.type
-              });
-              
-              if (extracted.success) {
-                extractedContent = extracted.content;
-                // Also update the local attachment object
-                attachment.content = extracted.content;
-                console.log(`Successfully extracted and stored content for ${attachment.name}`);
-              } else {
-                console.warn(`Content extraction failed for ${attachment.name}:`, extracted.error);
+              try {
+                const extracted = await extractResponse.json();
+                console.log(`/Content extraction result for ${attachment.name}:`, {
+                  success: extracted.success,
+                  contentLength: extracted.content?.length || 0,
+                  contentPreview: extracted.content?.substring(0, 100) || 'No content',
+                  type: extracted.type
+                });
+                
+                if (extracted.success) {
+                  extractedContent = extracted.content;
+                  // Also update the local attachment object
+                  attachment.content = extracted.content;
+                  console.log(`Successfully extracted and stored content for ${attachment.name}`);
+                } else {
+                  console.warn(`Content extraction failed for ${attachment.name}:`, extracted.error);
+                }
+              } catch (parseError) {
+                console.error(`Failed to parse extract response for ${attachment.name}:`, parseError);
               }
             } else {
               console.error(`Content extraction API failed for ${attachment.name}:`, extractResponse.status);
@@ -592,7 +604,17 @@ const router = useRouter();
       });
 
       if (!analysisResponse.ok) {
-        throw new Error('Failed to analyze note');
+        let errorMessage = 'Failed to analyze note';
+        try {
+          const contentType = analysisResponse.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const errorData: { error?: string } = await analysisResponse.json();
+            errorMessage = errorData.error || errorMessage;
+          }
+        } catch (parseError) {
+          console.warn('Failed to parse analysis error response as JSON:', parseError);
+        }
+        throw new Error(errorMessage);
       }
 
       const analysis = await analysisResponse.json();
@@ -618,7 +640,17 @@ const router = useRouter();
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save note');
+        let errorMessage = 'Failed to save note';
+        try {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const errorData: { error?: string } = await response.json();
+            errorMessage = errorData.error || errorMessage;
+          }
+        } catch (parseError) {
+          console.warn('Failed to parse save error response as JSON:', parseError);
+        }
+        throw new Error(errorMessage);
       }
 
       const savedNote = await response.json();
@@ -681,14 +713,7 @@ const router = useRouter();
 
   return (
     <div className="h-full w-full p-4 overflow-hidden">
-      <Card className="h-full flex flex-col relative">
-        {/* Animated Background - Full Height */}
-        <div className="absolute inset-0 h-full w-full overflow-hidden">
-          <div className="bg-primary/10 absolute top-0 left-1/4 h-96 w-96 animate-pulse rounded-full mix-blend-normal blur-[128px] filter" />
-          <div className="bg-secondary/10 absolute right-1/4 bottom-0 h-96 w-96 animate-pulse rounded-full mix-blend-normal blur-[128px] filter delay-700" />
-          <div className="bg-primary/10 absolute top-1/4 right-1/3 h-64 w-64 animate-pulse rounded-full mix-blend-normal blur-[96px] filter delay-1000" />
-        </div>
-        
+      <Card className="h-full flex flex-col relative bg-background/5 backdrop-blur-[1px] border-border/10">
         <div className="flex-1 flex flex-col space-y-6 overflow-visible relative z-10 p-6">
           
           <div className="flex w-full overflow-visible flex-1 items-center justify-center">
@@ -755,9 +780,10 @@ const router = useRouter();
                           'focus:outline-none',
                           'placeholder:text-muted-foreground',
                           'min-h-[60px]',
+                          'custom-scrollbar',
                         )}
                         style={{
-                          overflow: 'hidden',
+                          overflow: 'auto',
                         }}
                         showRing={false}
                       />
@@ -836,7 +862,7 @@ const router = useRouter();
               <AnimatePresence>
                 {isTyping && (
                   <motion.div
-                    className="border-border bg-background/80 fixed bottom-8 mx-auto -translate-x-1/2 transform rounded-full border px-4 py-2 shadow-lg backdrop-blur-2xl"
+                    className="border-border bg-background/80 fixed bottom-8 left-1/2 -translate-x-1/2 transform rounded-full border px-4 py-2 shadow-lg backdrop-blur-2xl"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 20 }}
@@ -853,21 +879,6 @@ const router = useRouter();
                   </motion.div>
                 )}
               </AnimatePresence>
-              {inputFocused && (
-                <motion.div
-                  className="from-primary via-primary/80 to-secondary pointer-events-none fixed z-0 h-[50rem] w-[50rem] rounded-full bg-gradient-to-r opacity-[0.02] blur-[96px]"
-                  animate={{
-                    x: mousePosition.x - 400,
-                    y: mousePosition.y - 400,
-                  }}
-                  transition={{
-                    type: 'spring',
-                    damping: 25,
-                    stiffness: 150,
-                    mass: 0.5,
-                  }}
-                />
-              )}
             </div>
           </div>
 

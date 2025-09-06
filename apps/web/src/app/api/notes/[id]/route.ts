@@ -1,13 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@polynote/db';
 import { notes, attachments } from '@polynote/db';
-import { eq } from 'drizzle-orm';
+import { getCurrentUser } from '@/lib/auth';
+import { eq, and } from 'drizzle-orm';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    // Get the current user
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
     const noteId = await params.id;
 
     if (!noteId) {
@@ -17,11 +27,11 @@ export async function GET(
       );
     }
 
-    // Fetch note with attachments
+    // Fetch note with attachments - only if user owns it
     const noteResult = await db
       .select()
       .from(notes)
-      .where(eq(notes.id, noteId))
+      .where(and(eq(notes.id, noteId), eq(notes.userId, user.id)))
       .limit(1);
 
     if (noteResult.length === 0) {
@@ -63,6 +73,15 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    // Get the current user
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
     const noteId = await params.id;
     const body = await request.json();
     const { title, content, summary } = body;
@@ -89,7 +108,7 @@ export async function PUT(
         summary: summary?.trim() || null,
         updatedAt: new Date(),
       })
-      .where(eq(notes.id, noteId))
+      .where(and(eq(notes.id, noteId), eq(notes.userId, user.id)))
       .returning();
 
     if (result.length === 0) {
@@ -114,6 +133,15 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    // Get the current user
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
     const noteId = await params.id;
 
     if (!noteId) {
@@ -125,7 +153,7 @@ export async function DELETE(
 
     const result = await db
       .delete(notes)
-      .where(eq(notes.id, noteId))
+      .where(and(eq(notes.id, noteId), eq(notes.userId, user.id)))
       .returning();
 
     if (result.length === 0) {

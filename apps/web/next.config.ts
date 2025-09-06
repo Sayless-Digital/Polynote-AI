@@ -2,19 +2,17 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   experimental: {
-    turbo: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
+    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
+  },
+  turbopack: {
+    rules: {
+      '*.svg': {
+        loaders: ['@svgr/webpack'],
+        as: '*.js',
       },
     },
-    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
-    serverComponentsExternalPackages: ['@neondatabase/serverless'],
   },
-  // Enable faster builds and better performance
-  swcMinify: true,
+  serverExternalPackages: ['@neondatabase/serverless'],
   // Optimize for production
   compress: true,
 };

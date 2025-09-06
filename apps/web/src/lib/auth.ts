@@ -1,6 +1,5 @@
 import { cookies } from 'next/headers';
-import { db } from '@polynote/db';
-import { users, sessions, emailVerificationTokens } from '@polynote/db/schema';
+import { db, users, sessions, emailVerificationTokens } from '@polynote/db';
 import { eq, and, gt } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { randomBytes } from 'crypto';
@@ -149,7 +148,7 @@ export async function createUser(email: string, name: string, password: string):
 
 // Authentication helpers
 export async function getCurrentUser(): Promise<User | null> {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const sessionToken = cookieStore.get('session')?.value;
   
   if (!sessionToken) {
@@ -173,8 +172,8 @@ export async function requireAuth(): Promise<User> {
 }
 
 // Cookie helpers
-export function setSessionCookie(token: string) {
-  const cookieStore = cookies();
+export async function setSessionCookie(token: string) {
+  const cookieStore = await cookies();
   cookieStore.set('session', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -184,7 +183,7 @@ export function setSessionCookie(token: string) {
   });
 }
 
-export function clearSessionCookie() {
-  const cookieStore = cookies();
+export async function clearSessionCookie() {
+  const cookieStore = await cookies();
   cookieStore.delete('session');
 }

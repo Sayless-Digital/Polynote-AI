@@ -3,6 +3,15 @@ import { extractTextFromFile } from '@/lib/file-extraction';
 
 export async function POST(request: NextRequest) {
   try {
+    const contentType = request.headers.get('content-type');
+    
+    if (!contentType || !contentType.includes('multipart/form-data')) {
+      return NextResponse.json(
+        { error: 'Content-Type must be multipart/form-data' },
+        { status: 400 }
+      );
+    }
+
     const formData = await request.formData();
     const file = formData.get('file') as File;
     

@@ -2,17 +2,27 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@polynote/db';
 import { notes, attachments } from '@polynote/db';
 import { analyzeNote } from '@/lib/ai';
+import { getCurrentUser } from '@/lib/auth';
 import { sql, desc, and, or, ilike, eq } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
   try {
+    // Get the current user
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search');
     const category = searchParams.get('category');
     const tag = searchParams.get('tag');
 
     // Build conditions array for better query optimization
-    const conditions = [];
+    const conditions = [eq(notes.userId, user.id)]; // Only show user's own notes
 
     // Optimize search with proper indexing
     if (search) {
@@ -64,6 +74,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Get the current user
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const { title, content, transcript, tags, categories, attachments: uploadedFiles, aiAnalysis } = body;
 
@@ -88,6 +107,7 @@ export async function POST(request: NextRequest) {
 
     // Prepare the note data - prioritize AI-generated title and summary
     const noteData = {
+      userId: user.id,
       title: finalAiAnalysis?.title || title || 'Untitled Note',
       content,
       transcript: transcript || null,

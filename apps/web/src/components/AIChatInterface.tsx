@@ -22,7 +22,7 @@ export function AIChatInterface() {
 
   return (
     <div className="h-full w-full p-4 overflow-hidden">
-      <Card className="h-full flex flex-col">
+      <Card className="h-full flex flex-col bg-background/5 backdrop-blur-[1px] border-border/10">
         <CardHeader className="flex-shrink-0">
           <CardTitle className="flex items-center gap-2">
             <Bot className="w-5 h-5" />

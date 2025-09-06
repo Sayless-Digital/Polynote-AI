@@ -138,14 +138,23 @@ Provide a helpful, concise answer based on the note content.
  */
 export async function testAIConnection(): Promise<boolean> {
   try {
+    console.log('Testing AI connection with model:', geminiFlash);
+    console.log('API Key present:', !!process.env.GOOGLE_GENERATIVE_AI_API_KEY);
+    console.log('API Key length:', process.env.GOOGLE_GENERATIVE_AI_API_KEY?.length);
+    
     const result = await generateText({
       model: geminiFlash,
       prompt: 'Say "Hello" if you can read this message.',
     });
 
+    console.log('AI test result:', result.text);
     return result.text.includes('Hello') || result.text.length > 0;
   } catch (error) {
     console.error('AI connection test failed:', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return false;
   }
 }
