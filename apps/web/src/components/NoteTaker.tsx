@@ -99,7 +99,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
       <div className={cn('relative', containerClassName)}>
         <textarea
           className={cn(
-            'border-input bg-background flex min-h-[80px] w-full rounded-md border px-3 py-2 text-sm',
+            'border-white/20 bg-background/10 backdrop-blur-md flex min-h-[80px] w-full rounded-md border px-3 py-2 text-sm',
             'transition-all duration-200 ease-in-out',
             'placeholder:text-muted-foreground',
             'disabled:cursor-not-allowed disabled:opacity-50',
@@ -752,14 +752,14 @@ const router = useRouter();
                     </motion.p>
             </div>
                   <motion.div
-                    className="border-border bg-card/80 relative rounded-2xl border shadow-2xl backdrop-blur-2xl"
+                    className="bg-background/15 backdrop-blur-[1px] border-border/50 relative rounded-2xl border shadow-sm"
                     initial={{ scale: 0.98 }}
                     animate={{ scale: 1 }}
                     transition={{ delay: 0.1 }}
                     style={{ marginTop: '60px', overflow: 'visible' }}
                   >
-                    <div className="p-4">
-                      <Textarea
+                    <div className="p-4 bg-transparent">
+                      <textarea
                         ref={textareaRef}
                         value={value}
                         onChange={(e) => {
@@ -770,22 +770,10 @@ const router = useRouter();
                         onFocus={() => setInputFocused(true)}
                         onBlur={() => setInputFocused(false)}
                         placeholder="Type your note here..."
-                        containerClassName="w-full"
-                        className={cn(
-                          'w-full px-4 py-3',
-                          'resize-none',
-                          'bg-transparent',
-                          'border-none',
-                          'text-foreground text-sm',
-                          'focus:outline-none',
-                          'placeholder:text-muted-foreground',
-                          'min-h-[60px]',
-                          'custom-scrollbar',
-                        )}
+                        className="w-full px-4 py-3 resize-none bg-transparent border-none outline-none text-foreground text-sm placeholder:text-muted-foreground min-h-[60px]"
                         style={{
                           overflow: 'auto',
                         }}
-                        showRing={false}
                       />
         </div>
                     <AnimatePresence>
@@ -819,17 +807,17 @@ const router = useRouter();
                         </motion.div>
                       )}
                     </AnimatePresence>
-                    <div className="border-border flex items-center justify-between gap-4 border-t p-4">
+                    <div className="border-border/10 flex items-center justify-between gap-4 border-t p-4">
                       <div className="flex items-center gap-3">
                         <motion.button
                           type="button"
                           onClick={handleAttachFile}
                           whileTap={{ scale: 0.94 }}
-                          className="group text-muted-foreground hover:text-foreground relative rounded-lg p-2 transition-colors"
+                          className="group text-muted-foreground hover:text-foreground relative rounded-lg p-2 transition-colors bg-background/5 backdrop-blur-[1px] border border-border/10"
                         >
                           <Paperclip className="h-4 w-4" />
                           <motion.span
-                            className="bg-primary/10 absolute inset-0 rounded-lg opacity-0 transition-opacity group-hover:opacity-100"
+                            className="bg-background/10 absolute inset-0 rounded-lg opacity-0 transition-opacity group-hover:opacity-100"
                             layoutId="button-highlight"
                           />
                         </motion.button>
@@ -843,9 +831,10 @@ const router = useRouter();
                         className={cn(
                           'rounded-lg px-4 py-2 text-sm font-medium transition-all',
                           'flex items-center gap-2',
+                          'backdrop-blur-[1px] border border-border/10',
                           value.trim()
                             ? 'bg-primary text-primary-foreground shadow-primary/10 shadow-lg'
-                            : 'bg-muted/50 text-muted-foreground',
+                            : 'bg-background/5 text-muted-foreground',
                         )}
                       >
                         {isTyping ? (
@@ -862,7 +851,7 @@ const router = useRouter();
               <AnimatePresence>
                 {isTyping && (
                   <motion.div
-                    className="border-border bg-background/80 fixed bottom-8 left-1/2 -translate-x-1/2 transform rounded-full border px-4 py-2 shadow-lg backdrop-blur-2xl"
+                    className="border-border/10 bg-background/5 fixed bottom-8 left-1/2 -translate-x-1/2 transform rounded-full border px-4 py-2 shadow-sm backdrop-blur-[1px]"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 20 }}

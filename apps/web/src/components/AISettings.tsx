@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useGlobalLoading } from '@/contexts/LoadingContext';
 import { 
   Settings, 
   Key, 
@@ -94,6 +95,7 @@ export function AISettings() {
   const [settings, setSettings] = useState<AISettings | null>(null);
   const [usage, setUsage] = useState<TokenUsage | null>(null);
   const [loading, setLoading] = useState(true);
+  const { setLoading: setGlobalLoading } = useGlobalLoading();
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message?: string; error?: string; testResult?: { response: string; duration: number; provider: string; model: string } } | null>(null);
@@ -117,7 +119,19 @@ export function AISettings() {
   const loadSettings = async () => {
     try {
       setLoading(true);
+      setGlobalLoading(true);
       const response = await fetch('/api/ai-settings?includeUsage=true');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Server returned non-JSON response');
+      }
+      
       const data = await response.json();
 
       if (data.success) {
@@ -142,6 +156,7 @@ export function AISettings() {
       setError('Failed to load settings');
     } finally {
       setLoading(false);
+      setGlobalLoading(false);
     }
   };
 
@@ -157,6 +172,16 @@ export function AISettings() {
         },
         body: JSON.stringify(formData),
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Server returned non-JSON response');
+      }
 
       const data = await response.json();
 
@@ -192,6 +217,16 @@ export function AISettings() {
         }),
       });
 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Server returned non-JSON response');
+      }
+
       const data = await response.json();
       setTestResult(data);
     } catch {
@@ -215,12 +250,9 @@ export function AISettings() {
 
   const selectedProvider = AI_PROVIDERS[formData.provider as keyof typeof AI_PROVIDERS];
 
+  // Don't render anything while loading, let the global loader handle it
   if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
+    return null;
   }
 
   return (
@@ -236,20 +268,20 @@ export function AISettings() {
       </div>
 
       {error && (
-        <Alert variant="destructive" className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
+        <Alert variant="destructive" className="bg-background/5 backdrop-blur-[1px] border-border/10 shadow-sm">
           <XCircle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
       <Tabs defaultValue="configuration" className="space-y-6">
-        <TabsList className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
+        <TabsList className="bg-background/5 backdrop-blur-[1px] border-border/10 shadow-sm">
           <TabsTrigger value="configuration">Configuration</TabsTrigger>
           <TabsTrigger value="usage">Usage Statistics</TabsTrigger>
         </TabsList>
 
         <TabsContent value="configuration" className="space-y-6">
-          <Card className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
+          <Card className="bg-background/5 backdrop-blur-[1px] border-border/10 shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Key className="h-5 w-5" />
@@ -355,7 +387,7 @@ export function AISettings() {
               </div>
 
               {testResult && (
-                <Alert variant={testResult.success ? "default" : "destructive"} className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
+                <Alert variant={testResult.success ? "default" : "destructive"} className="bg-background/5 backdrop-blur-[1px] border-border/10 shadow-sm">
                   {testResult.success ? (
                     <CheckCircle className="h-4 w-4" />
                   ) : (
@@ -375,7 +407,7 @@ export function AISettings() {
             </CardContent>
           </Card>
 
-          <Card className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
+          <Card className="bg-background/5 backdrop-blur-[1px] border-border/10 shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Brain className="h-5 w-5" />
@@ -445,7 +477,7 @@ export function AISettings() {
         <TabsContent value="usage" className="space-y-6">
           {usage ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
+              <Card className="bg-background/5 backdrop-blur-[1px] border-border/10 shadow-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-2">
                     <BarChart3 className="h-4 w-4 text-muted-foreground" />
@@ -457,7 +489,7 @@ export function AISettings() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
+              <Card className="bg-background/5 backdrop-blur-[1px] border-border/10 shadow-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-2">
                     <Brain className="h-4 w-4 text-muted-foreground" />
@@ -469,7 +501,7 @@ export function AISettings() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
+              <Card className="bg-background/5 backdrop-blur-[1px] border-border/10 shadow-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-2">
                     <CheckCircle className="h-4 w-4 text-muted-foreground" />
@@ -485,7 +517,7 @@ export function AISettings() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
+              <Card className="bg-background/5 backdrop-blur-[1px] border-border/10 shadow-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-2">
                     <Info className="h-4 w-4 text-muted-foreground" />
@@ -498,7 +530,7 @@ export function AISettings() {
               </Card>
             </div>
           ) : (
-            <Card className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
+            <Card className="bg-background/5 backdrop-blur-[1px] border-border/10 shadow-sm">
               <CardContent className="p-6 text-center">
                 <p className="text-muted-foreground">No usage data available</p>
               </CardContent>

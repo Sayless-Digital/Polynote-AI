@@ -2,7 +2,6 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useTheme } from 'next-themes';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 
 const colors = {
@@ -276,17 +275,32 @@ export default function MinimalHero({ onSignInClick, onLogInClick }: MinimalHero
       <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-8 py-12 md:px-16 md:py-20">
         {/* Logo */}
         <div className="flex items-center justify-center space-x-3 -ml-4 mb-6">
-          {mounted ? (
-            <Image
-              src={theme === 'dark' ? '/polynote logo light.svg' : '/polynote logo dark.svg'}
+          <div className="relative w-12 h-12">
+            {/* Light theme logo (white) - shown in dark mode */}
+            <img
+              src="/polynote logo light.svg"
               alt="PolyNote Logo"
               width={48}
               height={48}
-              className="w-12 h-12"
+              className={`absolute inset-0 transition-opacity duration-200 w-12 h-12 ${
+                mounted && theme === 'dark' ? 'opacity-100' : 'opacity-0'
+              }`}
             />
-          ) : (
-            <div className="w-12 h-12 bg-muted animate-pulse rounded" />
-          )}
+            {/* Dark theme logo (black) - shown in light mode */}
+            <img
+              src="/polynote logo dark.svg"
+              alt="PolyNote Logo"
+              width={48}
+              height={48}
+              className={`absolute inset-0 transition-opacity duration-200 w-12 h-12 ${
+                mounted && theme === 'dark' ? 'opacity-0' : 'opacity-100'
+              }`}
+            />
+            {/* Fallback for when not mounted */}
+            {!mounted && (
+              <div className="w-12 h-12 bg-muted animate-pulse rounded-md" />
+            )}
+          </div>
           <h1 className="text-2xl font-bold text-foreground">PolyNote</h1>
         </div>
 

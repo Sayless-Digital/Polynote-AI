@@ -216,7 +216,7 @@ export function AuthDialog({ open, onOpenChange, onSignIn }: AuthDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-background/10 backdrop-blur-md shadow-2xl auth-dialog-animated">
+      <DialogContent className="sm:max-w-md auth-dialog-animated">
         <DialogHeader>
           <div className="flex flex-col items-center space-y-4">
             {mounted ? (
@@ -228,7 +228,7 @@ export function AuthDialog({ open, onOpenChange, onSignIn }: AuthDialogProps) {
                 className="w-12 h-12"
               />
             ) : (
-              <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              <div className="w-12 h-12 bg-muted rounded animate-pulse" />
             )}
             <DialogTitle className="text-2xl font-bold text-center">
               {showForgotPassword ? "Reset Password" : "Welcome to PolyNote"}
@@ -252,13 +252,13 @@ export function AuthDialog({ open, onOpenChange, onSignIn }: AuthDialogProps) {
 
           <TabsContent value="signin" className="space-y-4">
             {errorMessage && activeTab === "signin" && !showForgotPassword && (
-              <div className="flex items-center gap-2 p-3 text-sm text-red-600 bg-red-50 dark:bg-red-950/20 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-md">
+              <div className="flex items-center gap-2 p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
                 <AlertCircle className="h-4 w-4 flex-shrink-0" />
                 <span>{errorMessage}</span>
               </div>
             )}
             {errorMessage && showForgotPassword && (
-              <div className="flex items-center gap-2 p-3 text-sm text-red-600 bg-red-50 dark:bg-red-950/20 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-md">
+              <div className="flex items-center gap-2 p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
                 <AlertCircle className="h-4 w-4 flex-shrink-0" />
                 <span>{errorMessage}</span>
               </div>
@@ -375,7 +375,7 @@ export function AuthDialog({ open, onOpenChange, onSignIn }: AuthDialogProps) {
 
           <TabsContent value="signup" className="space-y-4">
             {errorMessage && activeTab === "signup" && (
-              <div className="flex items-center gap-2 p-3 text-sm text-red-600 bg-red-50 dark:bg-red-950/20 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-md">
+              <div className="flex items-center gap-2 p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
                 <AlertCircle className="h-4 w-4 flex-shrink-0" />
                 <span>{errorMessage}</span>
               </div>
@@ -464,14 +464,14 @@ export function AuthDialog({ open, onOpenChange, onSignIn }: AuthDialogProps) {
 
       {/* Success Modal */}
       <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
-        <DialogContent className="sm:max-w-md bg-background/10 backdrop-blur-md shadow-2xl auth-dialog-animated">
+        <DialogContent className="sm:max-w-md auth-dialog-animated">
           <DialogHeader>
             <DialogTitle className="sr-only">Account Created Successfully</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center space-y-6 p-6">
             {/* Success Icon */}
-            <div className="flex items-center justify-center w-16 h-16 bg-green-100 dark:bg-green-950/20 rounded-full">
-              <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+            <div className="flex items-center justify-center w-16 h-16 bg-muted rounded-full">
+              <CheckCircle className="w-8 h-8 text-primary" />
             </div>
             
             {/* Success Message */}

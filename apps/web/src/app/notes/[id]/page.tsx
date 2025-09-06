@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { useTheme } from 'next-themes';
-import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,8 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import { UserCard } from '@/components/UserCard';
+import { AppHeader } from '@/components/AppHeader';
 import { useAuth } from '@/hooks/useAuth';
 import { ArrowLeft, Calendar, Tag, Save, Trash2, Bot, FileText, Download, ChevronDown, ChevronRight, PenTool, MessageSquare } from 'lucide-react';
 
@@ -52,9 +49,7 @@ export default function ViewNotePage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { theme } = useTheme();
   const { user, isAuthenticated, signOut } = useAuth();
-  const [mounted, setMounted] = useState(false);
   const [note, setNote] = useState<Note | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -77,11 +72,6 @@ export default function ViewNotePage() {
   const summaryRef = useRef<HTMLDivElement>(null);
 
   const noteId = params.id as string;
-
-  // Prevent hydration mismatch by only rendering theme-dependent content after mount
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // Update content only when note changes, not on every render
   useEffect(() => {
@@ -413,33 +403,33 @@ export default function ViewNotePage() {
         case 'saving':
           return {
             variant: 'default' as const,
-            className: 'bg-blue-500 hover:bg-blue-600 text-white animate-pulse',
+            className: 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-600 dark:text-blue-400 animate-pulse backdrop-blur-[1px] border border-blue-200/30',
             children: (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                Saving...
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 dark:border-blue-400 mr-2 flex-shrink-0"></div>
+                <span>Saving...</span>
               </>
             ),
           };
         case 'saved':
           return {
             variant: 'default' as const,
-            className: 'bg-green-500 hover:bg-green-600 text-white',
+            className: 'bg-green-500/20 hover:bg-green-500/30 text-green-600 dark:text-green-400 backdrop-blur-[1px] border border-green-200/30',
             children: (
               <>
-                <Save className="h-4 w-4 mr-2" />
-                Saved
+                <Save className="h-4 w-4 mr-2 flex-shrink-0" />
+                <span>Saved</span>
               </>
             ),
           };
         case 'error':
           return {
             variant: 'destructive' as const,
-            className: 'bg-red-500 hover:bg-red-600 text-white',
+            className: 'bg-red-500/20 hover:bg-red-500/30 text-red-600 dark:text-red-400 backdrop-blur-[1px] border border-red-200/30',
             children: (
               <>
-                <Save className="h-4 w-4 mr-2" />
-                Error
+                <Save className="h-4 w-4 mr-2 flex-shrink-0" />
+                <span>Error</span>
               </>
             ),
           };
@@ -447,12 +437,12 @@ export default function ViewNotePage() {
           return {
             variant: hasChanges ? ('default' as const) : ('outline' as const),
             className: hasChanges 
-              ? 'bg-yellow-500 hover:bg-yellow-600 text-white' 
-              : 'text-muted-foreground',
+              ? 'bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-600 dark:text-yellow-400 backdrop-blur-[1px] border border-yellow-200/30' 
+              : 'text-muted-foreground bg-background/5 backdrop-blur-[1px] border border-border/10',
             children: (
               <>
-                <Save className="h-4 w-4 mr-2" />
-                {hasChanges ? 'Save' : 'Saved'}
+                <Save className="h-4 w-4 mr-2 flex-shrink-0" />
+                <span>{hasChanges ? 'Save' : 'Saved'}</span>
               </>
             ),
           };
@@ -467,7 +457,7 @@ export default function ViewNotePage() {
         size="sm"
         onClick={handleManualSave}
         disabled={!hasChanges && saveState === 'idle'}
-        className={buttonProps.className}
+        className={`${buttonProps.className} h-8 min-h-[2rem] flex items-center justify-center`}
       >
         {buttonProps.children}
       </Button>
@@ -492,106 +482,15 @@ export default function ViewNotePage() {
     }
   };
 
+  // Don't show anything while loading, let the global loader handle it
   if (loading) {
-    return (
-      <div className="h-screen w-screen bg-background/10 backdrop-blur-[1px] flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="border-b/10 bg-background/5 backdrop-blur-[1px] flex-shrink-0">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <h1 className="text-2xl font-bold">Polynote AI</h1>
-              <div className="flex items-center space-x-4">
-                <nav className="flex space-x-4">
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleNavigation('take')}
-                  >
-                    Take Notes
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleNavigation('review')}
-                  >
-                    Review Notes
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleNavigation('chat')}
-                  >
-                    AI Chat
-                  </Button>
-                </nav>
-                <ThemeToggle />
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* Main Content */}
-        <main className="flex-1 overflow-auto p-4">
-          <div className="max-w-4xl mx-auto space-y-6">
-            {/* Header Skeleton */}
-            <div className="flex items-center gap-4">
-              <Skeleton className="h-10 w-10" />
-              <div className="space-y-2">
-                <Skeleton className="h-8 w-64" />
-                <Skeleton className="h-4 w-32" />
-              </div>
-            </div>
-
-            {/* Content Skeleton */}
-            <Card className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
-              <CardHeader>
-                <Skeleton className="h-8 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-5/6" />
-                <Skeleton className="h-4 w-4/5" />
-                <Skeleton className="h-4 w-3/4" />
-              </CardContent>
-            </Card>
-          </div>
-        </main>
-      </div>
-    );
+    return null;
   }
 
   if (error || !note) {
     return (
       <div className="h-screen w-screen bg-background/10 backdrop-blur-[1px] flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="border-b/10 bg-background/5 backdrop-blur-[1px] flex-shrink-0">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <h1 className="text-2xl font-bold">Polynote AI</h1>
-              <div className="flex items-center space-x-4">
-                <nav className="flex space-x-4">
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleNavigation('take')}
-                  >
-                    Take Notes
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleNavigation('review')}
-                  >
-                    Review Notes
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleNavigation('chat')}
-                  >
-                    AI Chat
-                  </Button>
-                </nav>
-                <ThemeToggle />
-              </div>
-            </div>
-          </div>
-        </header>
+        <AppHeader onViewChange={handleNavigation} />
 
         {/* Main Content */}
         <main className="flex-1 overflow-auto p-4">
@@ -603,7 +502,7 @@ export default function ViewNotePage() {
               <h1 className="text-2xl font-bold">Error</h1>
             </div>
             
-            <Card className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
+            <Card className="bg-background/5 backdrop-blur-[1px] border-border/10 shadow-sm">
               <CardContent className="p-8 text-center">
                 <p className="text-muted-foreground mb-4">
                   {error || 'Note not found'}
@@ -639,73 +538,7 @@ export default function ViewNotePage() {
         <div className="absolute bottom-1/3 left-1/2 h-56 w-56 rounded-full mix-blend-normal opacity-18 bg-gradient-to-br from-orange-200 via-pink-300 to-red-300 animate-float-5" />
       </div>
 
-      {/* Header */}
-      <header className="border-b/10 bg-background/5 backdrop-blur-[1px] flex-shrink-0 relative z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center h-16">
-            {/* Left side - Logo */}
-            <div className="flex items-center space-x-3 flex-shrink-0">
-              {mounted ? (
-                <Image
-                  src={theme === 'dark' ? '/polynote logo light.svg' : '/polynote logo dark.svg'}
-                  alt="PolyNote Logo"
-                  width={48}
-                  height={48}
-                  className="w-12 h-12"
-                />
-              ) : (
-                <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-              )}
-              <h1 className="text-2xl font-bold">PolyNote</h1>
-            </div>
-            
-            {/* Center - Navigation */}
-            <div className="flex-1 flex justify-center">
-              <nav className="flex space-x-4">
-                <Button
-                  variant="ghost"
-                  onClick={() => handleNavigation('take')}
-                  className="flex items-center gap-2"
-                >
-                  <PenTool className="h-4 w-4" />
-                  Take Notes
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => handleNavigation('review')}
-                  className="flex items-center gap-2"
-                >
-                  <FileText className="h-4 w-4" />
-                  Review Notes
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => handleNavigation('chat')}
-                  className="flex items-center gap-2"
-                >
-                  <MessageSquare className="h-4 w-4" />
-                  AI Chat
-                </Button>
-              </nav>
-            </div>
-            
-            {/* Right side - User controls */}
-            <div className="flex items-center space-x-4 flex-shrink-0">
-              {isAuthenticated && user ? (
-                <UserCard user={user} onSignOut={signOut} />
-              ) : (
-                <Button
-                  variant="outline"
-                  onClick={() => router.push('/')}
-                >
-                  Sign In
-                </Button>
-              )}
-              <ThemeToggle />
-            </div>
-          </div>
-        </div>
-      </header>
+      <AppHeader onViewChange={handleNavigation} />
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto p-4 relative z-10">
@@ -791,7 +624,7 @@ export default function ViewNotePage() {
                       Delete
                     </Button>
                   </DialogTrigger>
-                <DialogContent className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
+                <DialogContent className="bg-background/5 backdrop-blur-[1px] border-border/10 shadow-sm">
                   <DialogHeader>
                     <DialogTitle>Delete Note</DialogTitle>
                     <DialogDescription>
@@ -823,7 +656,7 @@ export default function ViewNotePage() {
                   <Badge 
                     key={tag} 
                     variant="secondary" 
-                    className="flex items-center gap-1 bg-background/20 backdrop-blur-sm border-white/10 hover:bg-background/30 transition-colors"
+                    className="flex items-center gap-1 bg-muted hover:bg-muted/80 transition-colors"
                   >
                     <Tag className="h-3 w-3" />
                     {tag}
@@ -838,7 +671,7 @@ export default function ViewNotePage() {
                   <Badge 
                     key={category} 
                     variant="outline" 
-                    className="bg-background/10 backdrop-blur-sm border-white/20 hover:bg-background/20 transition-colors capitalize"
+                    className="bg-muted/50 hover:bg-muted transition-colors capitalize"
                   >
                     {category}
                   </Badge>
@@ -849,7 +682,7 @@ export default function ViewNotePage() {
         )}
 
         {/* AI Summary */}
-        <Card className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
+        <Card className="bg-background/5 backdrop-blur-[1px] border-border/10 shadow-sm">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg flex items-center gap-2">
@@ -909,7 +742,7 @@ export default function ViewNotePage() {
         </Card>
 
         {/* Main Content */}
-        <Card className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
+        <Card className="bg-background/5 backdrop-blur-[1px] border-border/10 shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg">Content</CardTitle>
             <CardDescription className="text-xs text-muted-foreground">
@@ -964,7 +797,7 @@ export default function ViewNotePage() {
 
         {/* File Attachments */}
         {note.attachments && note.attachments.length > 0 && (
-          <Card className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
+          <Card className="bg-background/5 backdrop-blur-[1px] border-border/10 shadow-sm">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <FileText className="h-5 w-5" />
@@ -976,7 +809,7 @@ export default function ViewNotePage() {
             </CardHeader>
             <CardContent className="space-y-3">
               {note.attachments.map((attachment) => (
-                <Collapsible key={attachment.id} className="border border-white/20 rounded-lg bg-background/10 backdrop-blur-md shadow-lg">
+                <Collapsible key={attachment.id} className="border border-border rounded-md bg-card shadow-sm">
                   <div className="flex items-center justify-between w-full p-3 hover:bg-muted/30 transition-colors">
                     <CollapsibleTrigger className="flex items-center gap-3 flex-1">
                       <FileText className="h-4 w-4 text-muted-foreground" />
@@ -1004,14 +837,14 @@ export default function ViewNotePage() {
                   </div>
                   <CollapsibleContent className="px-3 pb-3">
                     {attachment.content ? (
-                      <div className="mt-3 p-3 bg-background/10 backdrop-blur-md rounded-md border border-white/20 shadow-sm">
+                      <div className="mt-3 p-3 bg-muted rounded-md border border-border shadow-sm">
                         <div className="text-sm font-medium mb-2">File Content:</div>
                         <div className="text-sm text-muted-foreground whitespace-pre-wrap max-h-60 overflow-y-auto">
                           {attachment.content}
                         </div>
                       </div>
                     ) : (
-                      <div className="mt-3 p-3 bg-muted/20 backdrop-blur-sm rounded-md border border-border/10 text-sm text-muted-foreground">
+                      <div className="mt-3 p-3 bg-muted/20 rounded-md border border-border text-sm text-muted-foreground">
                         No text content available for this file type.
                       </div>
                     )}
@@ -1024,7 +857,7 @@ export default function ViewNotePage() {
 
         {/* Transcript */}
         {note.transcript && (
-          <Card className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
+          <Card className="bg-background/5 backdrop-blur-[1px] border-border/10 shadow-sm">
             <CardHeader>
               <CardTitle className="text-lg">Transcript</CardTitle>
               <CardDescription>
@@ -1043,7 +876,7 @@ export default function ViewNotePage() {
 
         {/* Metadata */}
         {note.metadata && (
-          <Card className="bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
+          <Card className="bg-background/5 backdrop-blur-[1px] border-border/10 shadow-sm">
             <CardHeader>
               <CardTitle className="text-lg">Analysis</CardTitle>
             </CardHeader>

@@ -26,8 +26,20 @@ export function useAuth() {
       })
 
       if (response.ok) {
-        const data = await response.json()
-        setUser(data.user)
+        // Check if response is JSON before parsing
+        const contentType = response.headers.get('content-type')
+        if (contentType && contentType.includes('application/json')) {
+          try {
+            const data = await response.json()
+            setUser(data.user)
+          } catch (parseError) {
+            console.error('Failed to parse auth response:', parseError)
+            setUser(null)
+          }
+        } else {
+          console.warn('Auth response is not JSON')
+          setUser(null)
+        }
       } else {
         setUser(null)
       }

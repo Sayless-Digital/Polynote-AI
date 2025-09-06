@@ -192,8 +192,11 @@ export function NotesList() {
         setDeleteDialogOpen(false);
         setNoteToDelete(null);
         
-        // Force refresh the notes list
-        await fetchNotes(true);
+        // Remove the deleted note from the current state immediately
+        setNotes(prevNotes => prevNotes.filter(note => note.id !== noteToDelete.id));
+        
+        // Force refresh the notes list to ensure consistency
+        await fetchNotes(false); // Don't show loading since we already updated the UI
       } else {
         alert('Failed to delete note');
       }
@@ -282,11 +285,15 @@ export function NotesList() {
       
       // Clear cache and refresh data
       cacheRef.current.clear();
+      
+      // Remove the deleted notes from the current state immediately
+      setNotes(prevNotes => prevNotes.filter(note => !selectedNotes.has(note.id)));
+      
       setSelectedNotes(new Set());
       setBulkActionDialogOpen(false);
       
-      // Force refresh the notes list
-      await fetchNotes(true);
+      // Force refresh the notes list to ensure consistency
+      await fetchNotes(false); // Don't show loading since we already updated the UI
     } catch (error) {
       console.error('Error deleting notes:', error);
     }
@@ -511,7 +518,7 @@ export function NotesList() {
                 <DropdownMenuTrigger asChild>
                   <Button 
                     variant="outline" 
-                    className="w-48 px-4 justify-between h-10 border-white/20 bg-background/10 backdrop-blur-md hover:bg-background/20"
+                    className="w-48 px-4 justify-between h-10 border-border bg-background hover:bg-muted"
                     disabled={selectedNotes.size === 0}
                   >
                     <span className="flex items-center gap-2">
@@ -526,7 +533,7 @@ export function NotesList() {
                     <ChevronDown className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56 bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
+                <DropdownMenuContent align="start" className="w-56">
                   <DropdownMenuItem 
                     onClick={() => handleBulkAction('delete')}
                     className="text-destructive focus:text-destructive focus:bg-destructive/10"
@@ -577,7 +584,7 @@ export function NotesList() {
                 <SelectTrigger className="w-full pl-10">
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
-                <SelectContent className="bg-background/10 backdrop-blur-[1px] border-border/10">
+                <SelectContent>
                   <SelectItem value="all" className="focus:bg-accent/10">All Categories</SelectItem>
                   {allCategories.map(category => (
                     <SelectItem key={category} value={category} className="focus:bg-accent/10">
@@ -593,7 +600,7 @@ export function NotesList() {
                 <SelectTrigger className="w-full pl-10">
                   <SelectValue placeholder="All Tags" />
                 </SelectTrigger>
-                <SelectContent className="bg-background/10 backdrop-blur-[1px] border-border/10">
+                <SelectContent>
                   <SelectItem value="all" className="focus:bg-accent/10">All Tags</SelectItem>
                   {allTags.map(tag => (
                     <SelectItem key={tag} value={tag} className="focus:bg-accent/10">
@@ -636,7 +643,7 @@ export function NotesList() {
                             <Button 
                               onClick={() => fetchNotes(true)} 
                               variant="outline" 
-                              className="border-white/20 bg-background/10 backdrop-blur-md hover:bg-background/20"
+                              className="border-border bg-background hover:bg-muted"
                             >
                               Refresh
                             </Button>
@@ -712,7 +719,7 @@ export function NotesList() {
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </DialogTrigger>
-                              <DialogContent className="sm:max-w-md bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
+                              <DialogContent className="sm:max-w-md">
                                 <DialogHeader>
                                   <DialogTitle>Delete Note</DialogTitle>
                                   <DialogDescription>
@@ -763,7 +770,7 @@ export function NotesList() {
 
       {/* Bulk Action Dialogs */}
       <Dialog open={bulkActionDialogOpen} onOpenChange={setBulkActionDialogOpen}>
-        <DialogContent className="sm:max-w-md bg-background/10 backdrop-blur-md border-white/20 shadow-2xl">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
               {bulkActionType === 'delete' && 'Delete Selected Notes'}

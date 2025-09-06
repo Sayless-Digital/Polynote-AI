@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { VerifyEmailSkeleton } from '@/components/skeletons/VerifyEmailSkeleton';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 
 export default function VerifyEmailPage() {
@@ -42,14 +43,15 @@ export default function VerifyEmailPage() {
       });
   }, [searchParams]);
 
+  if (status === 'loading') {
+    return <VerifyEmailSkeleton />;
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4">
-            {status === 'loading' && (
-              <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            )}
             {status === 'success' && (
               <CheckCircle className="h-12 w-12 text-green-500" />
             )}
@@ -58,12 +60,10 @@ export default function VerifyEmailPage() {
             )}
           </div>
           <CardTitle>
-            {status === 'loading' && 'Verifying Email...'}
             {status === 'success' && 'Email Verified!'}
             {status === 'error' && 'Verification Failed'}
           </CardTitle>
           <CardDescription>
-            {status === 'loading' && 'Please wait while we verify your email address.'}
             {status === 'success' && 'Your email has been successfully verified.'}
             {status === 'error' && 'There was a problem verifying your email.'}
           </CardDescription>

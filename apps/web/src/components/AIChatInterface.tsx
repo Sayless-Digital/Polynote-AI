@@ -7,6 +7,7 @@ import { Conversation, ConversationContent, ConversationScrollButton } from '@/c
 import { PromptInput, PromptInputTextarea, PromptInputToolbar, PromptInputSubmit } from '@/components/ai-elements/prompt-input';
 import { Response } from '@/components/ai-elements/response';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Mic, MicOff, Bot, User } from 'lucide-react';
 
 export function AIChatInterface() {
@@ -79,17 +80,15 @@ export function AIChatInterface() {
                   status={isLoading ? 'streaming' : undefined}
                   disabled={!input?.trim() || isLoading}
                 />
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon"
                   onClick={toggleRecording}
-                  className={`p-2 rounded-lg transition-colors ${
-                    isRecording 
-                      ? 'bg-red-100 text-red-600 hover:bg-red-200' 
-                      : 'text-muted-foreground hover:bg-accent'
-                  }`}
+                  className={isRecording ? 'bg-destructive/10 text-destructive hover:bg-destructive/20' : ''}
                 >
                   {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                </button>
+                </Button>
               </PromptInputToolbar>
             </PromptInput>
           </div>

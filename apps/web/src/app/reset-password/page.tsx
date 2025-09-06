@@ -6,6 +6,7 @@ import { useTheme } from "next-themes"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { ResetPasswordSkeleton } from '@/components/skeletons/ResetPasswordSkeleton'
 import { Lock, Eye, EyeOff, CheckCircle, AlertCircle, Loader2 } from "lucide-react"
 
 export default function ResetPasswordPage() {
@@ -98,11 +99,7 @@ export default function ResetPasswordPage() {
   }
 
   if (!mounted) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-      </div>
-    )
+    return <ResetPasswordSkeleton />
   }
 
   if (tokenValid === null) {

@@ -1,6 +1,6 @@
 import { db } from '@polynote/db';
 import { userAISettings, tokenUsageLogs, UserAISettings, NewTokenUsageLog } from '@polynote/db';
-import { eq } from 'drizzle-orm';
+import { eq, and, gte } from 'drizzle-orm';
 import crypto from 'crypto';
 
 // Type for decrypted user settings
@@ -212,8 +212,10 @@ export async function getUserTokenUsage(userId: string, days: number = 30) {
       .select()
       .from(tokenUsageLogs)
       .where(
-        eq(tokenUsageLogs.userId, userId)
-        // Add date filter when needed
+        and(
+          eq(tokenUsageLogs.userId, userId),
+          gte(tokenUsageLogs.createdAt, since)
+        )
       );
 
     const stats = {
@@ -223,8 +225,8 @@ export async function getUserTokenUsage(userId: string, days: number = 30) {
       totalOutputTokens: usage.reduce((sum, log) => sum + log.outputTokens, 0),
       successfulRequests: usage.filter(log => log.success).length,
       failedRequests: usage.filter(log => !log.success).length,
-      averageRequestDuration: usage.reduce((sum, log) => sum + (log.requestDuration || 0), 0) / usage.length,
-      estimatedTotalCost: usage.reduce((sum, log) => sum + (log.estimatedCost || 0), 0),
+      averageRequestDuration: usage.length > 0 ? usage.reduce((sum, log) => sum + (log.requestDuration || 0), 0) / usage.length : 0,
+      estimatedTotalCost: usage.reduce((sum, log) => sum + (log.estimatedCost || 0), 0) / 100, // Convert from cents to dollars
       byProvider: {} as Record<string, any>,
       byModel: {} as Record<string, any>,
       byAnalysisType: {} as Record<string, any>,
@@ -237,7 +239,7 @@ export async function getUserTokenUsage(userId: string, days: number = 30) {
       }
       stats.byProvider[log.provider].requests++;
       stats.byProvider[log.provider].tokens += log.totalTokens;
-      stats.byProvider[log.provider].cost += log.estimatedCost || 0;
+      stats.byProvider[log.provider].cost += (log.estimatedCost || 0) / 100; // Convert from cents to dollars
     });
 
     // Group by model
@@ -247,7 +249,7 @@ export async function getUserTokenUsage(userId: string, days: number = 30) {
       }
       stats.byModel[log.model].requests++;
       stats.byModel[log.model].tokens += log.totalTokens;
-      stats.byModel[log.model].cost += log.estimatedCost || 0;
+      stats.byModel[log.model].cost += (log.estimatedCost || 0) / 100; // Convert from cents to dollars
     });
 
     // Group by analysis type
@@ -257,7 +259,7 @@ export async function getUserTokenUsage(userId: string, days: number = 30) {
       }
       stats.byAnalysisType[log.analysisType].requests++;
       stats.byAnalysisType[log.analysisType].tokens += log.totalTokens;
-      stats.byAnalysisType[log.analysisType].cost += log.estimatedCost || 0;
+      stats.byAnalysisType[log.analysisType].cost += (log.estimatedCost || 0) / 100; // Convert from cents to dollars
     });
 
     return stats;
@@ -313,6 +315,7 @@ export function estimateCost(provider: string, model: string, tokens: number): n
   const modelInfo = providerInfo.models.find(m => m.id === model);
   if (!modelInfo) return 0;
 
-  return (tokens / 1000) * modelInfo.costPer1kTokens;
+  // Return cost in cents for storage
+  return Math.round((tokens / 1000) * modelInfo.costPer1kTokens * 100);
 }
 

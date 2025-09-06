@@ -82,7 +82,7 @@ export function UserCard({ user, onSignOut }: UserCardProps) {
             <p className="text-xs leading-none text-muted-foreground flex items-center gap-1">
               {user.emailVerified ? (
                 <>
-                  <MailCheck className="h-3 w-3 text-green-600" />
+                  <MailCheck className="h-3 w-3 text-primary" />
                   {user.email}
                 </>
               ) : (
@@ -109,7 +109,7 @@ export function UserCard({ user, onSignOut }: UserCardProps) {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem 
-          className="cursor-pointer text-red-600 focus:text-red-600"
+          className="cursor-pointer text-destructive focus:text-destructive"
           onClick={handleSignOut}
           disabled={isSigningOut}
         >
