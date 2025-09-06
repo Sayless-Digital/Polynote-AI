@@ -9,14 +9,28 @@ export abstract class BaseAnalysisService {
   abstract readonly type: AnalysisType;
 
   async initialize(userId: string) {
-    this.userSettings = await getUserAISettings(userId);
+    console.log(`[${this.type.toUpperCase()}] Initializing service for user:`, userId);
+    
+    // Only try to get user settings if userId is not 'default'
+    if (userId !== 'default') {
+      this.userSettings = await getUserAISettings(userId);
+      console.log(`[${this.type.toUpperCase()}] User settings:`, {
+        hasSettings: !!this.userSettings,
+        provider: this.userSettings?.provider,
+        model: this.userSettings?.model,
+        hasApiKey: !!this.userSettings?.apiKey
+      });
+    }
     
     if (this.userSettings?.provider === 'google' && this.userSettings?.apiKey) {
+      console.log(`[${this.type.toUpperCase()}] Using user's Google API key with model:`, this.userSettings.model);
       this.model = google(this.userSettings.model, {
         apiKey: this.userSettings.apiKey,
       });
     } else {
       // Fallback to environment variable
+      console.log(`[${this.type.toUpperCase()}] Using environment variable for Google API key`);
+      console.log(`[${this.type.toUpperCase()}] Environment API key present:`, !!process.env.GOOGLE_GENERATIVE_AI_API_KEY);
       this.model = google('models/gemini-1.5-flash-latest', {
         apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
       });
@@ -79,6 +93,46 @@ export abstract class BaseAnalysisService {
   }
 
   /**
+   * Execute analysis with retry logic and quota detection
+   */
+  protected async executeWithRetry<T>(
+    operation: () => Promise<T>,
+    maxRetries: number = 1
+  ): Promise<T> {
+    let lastError: Error | null = null;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await operation();
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error('Unknown error');
+        
+        // Check if it's a quota exceeded error - don't retry
+        const isQuotaExceeded = lastError.message.includes('quota') || 
+          lastError.message.includes('RESOURCE_EXHAUSTED') ||
+          lastError.message.includes('429') ||
+          lastError.message.includes('exceeded');
+        
+        if (isQuotaExceeded) {
+          console.log(`[${this.type.toUpperCase()}] Quota exceeded detected, not retrying`);
+          throw lastError;
+        }
+        
+        // If this is the last attempt, throw the error
+        if (attempt === maxRetries) {
+          throw lastError;
+        }
+        
+        console.log(`[${this.type.toUpperCase()}] Attempt ${attempt + 1} failed, retrying...`);
+        // Small delay before retry
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+    
+    throw lastError || new Error('Max retries exceeded');
+  }
+
+  /**
    * Log analysis metrics
    */
   protected async logMetrics(
@@ -95,19 +149,25 @@ export abstract class BaseAnalysisService {
       processingTime: `${processingTime}ms`,
       success,
       error,
+      inputTokens,
+      outputTokens,
       timestamp: new Date().toISOString(),
     });
 
     // Log token usage if we have user settings and userId
-    if (this.userSettings && userId && inputTokens !== undefined && outputTokens !== undefined) {
+    if (this.userSettings && userId) {
+      // Use actual token data if available, otherwise estimate
+      const actualInputTokens = inputTokens !== undefined ? inputTokens : 0;
+      const actualOutputTokens = outputTokens !== undefined ? outputTokens : 0;
+      
       await logTokenUsage(userId, {
         noteId,
         provider: this.userSettings.provider,
         model: this.userSettings.model,
         analysisType: this.type,
-        inputTokens,
-        outputTokens,
-        totalTokens: inputTokens + outputTokens,
+        inputTokens: actualInputTokens,
+        outputTokens: actualOutputTokens,
+        totalTokens: actualInputTokens + actualOutputTokens,
         requestDuration: processingTime,
         success,
         errorMessage: error,

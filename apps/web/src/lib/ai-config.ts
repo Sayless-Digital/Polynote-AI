@@ -2,6 +2,7 @@ import { db } from '@polynote/db';
 import { userAISettings, tokenUsageLogs, UserAISettings, NewTokenUsageLog } from '@polynote/db';
 import { eq, and, gte } from 'drizzle-orm';
 import crypto from 'crypto';
+import { AI_PROVIDERS } from './ai-providers';
 
 // Type for decrypted user settings
 export interface DecryptedUserAISettings extends Omit<UserAISettings, 'apiKey'> {
@@ -269,41 +270,6 @@ export async function getUserTokenUsage(userId: string, days: number = 30) {
   }
 }
 
-/**
- * Available AI providers and models
- */
-export const AI_PROVIDERS = {
-  google: {
-    name: 'Google Gemini',
-    models: [
-      { id: 'gemini-1.5-flash-latest', name: 'Gemini 1.5 Flash (Latest)', costPer1kTokens: 0.075 },
-      { id: 'gemini-1.5-pro-latest', name: 'Gemini 1.5 Pro (Latest)', costPer1kTokens: 1.25 },
-      { id: 'gemini-1.0-pro', name: 'Gemini 1.0 Pro', costPer1kTokens: 0.5 },
-    ],
-    apiKeyUrl: 'https://makersuite.google.com/app/apikey',
-    documentation: 'https://ai.google.dev/gemini-api/docs',
-  },
-  openai: {
-    name: 'OpenAI',
-    models: [
-      { id: 'gpt-4o', name: 'GPT-4o', costPer1kTokens: 2.5 },
-      { id: 'gpt-4o-mini', name: 'GPT-4o Mini', costPer1kTokens: 0.15 },
-      { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', costPer1kTokens: 0.5 },
-    ],
-    apiKeyUrl: 'https://platform.openai.com/api-keys',
-    documentation: 'https://platform.openai.com/docs',
-  },
-  anthropic: {
-    name: 'Anthropic Claude',
-    models: [
-      { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet', costPer1kTokens: 3.0 },
-      { id: 'claude-3-5-haiku-20241022', name: 'Claude 3.5 Haiku', costPer1kTokens: 0.8 },
-      { id: 'claude-3-opus-20240229', name: 'Claude 3 Opus', costPer1kTokens: 15.0 },
-    ],
-    apiKeyUrl: 'https://console.anthropic.com/',
-    documentation: 'https://docs.anthropic.com/',
-  },
-};
 
 /**
  * Estimate cost for token usage

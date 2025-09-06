@@ -14,7 +14,7 @@ export function SettingsPageSkeleton() {
         {/* Settings sections skeleton */}
         <div className="space-y-6">
           {/* AI Settings Section */}
-          <Card className="bg-card border-border shadow-sm">
+          <Card className="shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Skeleton className="h-5 w-5" />
@@ -38,7 +38,7 @@ export function SettingsPageSkeleton() {
           </Card>
 
           {/* User Preferences Section */}
-          <Card className="bg-card border-border shadow-sm">
+          <Card className="shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Skeleton className="h-5 w-5" />

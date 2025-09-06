@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { LoadingProvider } from "@/contexts/LoadingContext";
@@ -20,8 +20,12 @@ export const metadata: Metadata = {
   title: "Polynote AI",
   description: "AI-powered note-taking application",
   manifest: "/manifest.json",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
   themeColor: "#000000",
-  viewport: "width=device-width, initial-scale=1",
 };
 
 export default function RootLayout({

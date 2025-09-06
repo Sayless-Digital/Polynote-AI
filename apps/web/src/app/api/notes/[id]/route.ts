@@ -6,7 +6,7 @@ import { eq, and } from 'drizzle-orm';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Get the current user
@@ -18,7 +18,7 @@ export async function GET(
       );
     }
 
-    const noteId = await params.id;
+    const { id: noteId } = await params;
 
     if (!noteId) {
       return NextResponse.json(
@@ -70,7 +70,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Get the current user
@@ -82,9 +82,17 @@ export async function PUT(
       );
     }
 
-    const noteId = await params.id;
+    const { id: noteId } = await params;
     const body = await request.json();
     const { title, content, summary } = body;
+    
+    console.log('📝 Note update request received:', {
+      noteId,
+      title,
+      content: content?.substring(0, 100) + '...',
+      summary: summary?.substring(0, 100) + '...',
+      userId: user.id
+    });
 
     if (!noteId) {
       return NextResponse.json(
@@ -100,23 +108,41 @@ export async function PUT(
       );
     }
 
+    const updateData = {
+      title: title.trim(),
+      content: content.trim(),
+      summary: summary?.trim() || null,
+      updatedAt: new Date(),
+    };
+    
+    console.log('💾 Updating note in database:', {
+      noteId,
+      updateData: {
+        ...updateData,
+        content: updateData.content.substring(0, 100) + '...',
+        summary: updateData.summary?.substring(0, 100) + '...'
+      }
+    });
+    
     const result = await db
       .update(notes)
-      .set({
-        title: title.trim(),
-        content: content.trim(),
-        summary: summary?.trim() || null,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(and(eq(notes.id, noteId), eq(notes.userId, user.id)))
       .returning();
 
     if (result.length === 0) {
+      console.log('❌ Note not found or not owned by user');
       return NextResponse.json(
         { error: 'Note not found' },
         { status: 404 }
       );
     }
+
+    console.log('✅ Note updated successfully:', {
+      id: result[0].id,
+      title: result[0].title,
+      updatedAt: result[0].updatedAt
+    });
 
     return NextResponse.json(result[0]);
   } catch (error) {
@@ -130,7 +156,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Get the current user
@@ -142,7 +168,7 @@ export async function DELETE(
       );
     }
 
-    const noteId = await params.id;
+    const { id: noteId } = await params;
 
     if (!noteId) {
       return NextResponse.json(

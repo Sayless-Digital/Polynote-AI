@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { User, Settings, LogOut, Mail, MailCheck } from "lucide-react"
+import { createSettingsUrl } from "@/lib/url-utils"
 
 interface User {
   id: string
@@ -102,7 +103,7 @@ export function UserCard({ user, onSignOut }: UserCardProps) {
         </DropdownMenuItem>
         <DropdownMenuItem 
           className="cursor-pointer"
-          onClick={() => window.location.href = '/settings'}
+          onClick={() => window.location.href = createSettingsUrl(true)}
         >
           <Settings className="mr-2 h-4 w-4" />
           <span>AI Settings</span>

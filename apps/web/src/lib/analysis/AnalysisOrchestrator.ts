@@ -44,39 +44,52 @@ export class AnalysisOrchestrator {
         AnalysisType.TAGS,
         AnalysisType.SENTIMENT,
       ],
-      timeout: 30000, // 30 seconds total
-      retryAttempts: 2,
+      timeout: 15000, // 15 seconds total - fail faster
+      retryAttempts: 1,
       cacheEnabled: true,
       cacheTTL: 24 * 60 * 60 * 1000, // 24 hours
     };
   }
 
   private async initializeServices(userId?: string): Promise<void> {
-    const summaryService = new SummaryAnalysisService();
-    const keyPointsService = new KeyPointsAnalysisService();
-    const categoriesService = new CategoriesAnalysisService();
-    const tagsService = new TagsAnalysisService();
-    const sentimentService = new SentimentAnalysisService();
-    const titleService = new TitleAnalysisService();
+    // Only create services if they don't exist or if we need to reinitialize with user settings
+    if (this.services.size === 0 || userId) {
+      const summaryService = new SummaryAnalysisService();
+      const keyPointsService = new KeyPointsAnalysisService();
+      const categoriesService = new CategoriesAnalysisService();
+      const tagsService = new TagsAnalysisService();
+      const sentimentService = new SentimentAnalysisService();
+      const titleService = new TitleAnalysisService();
 
-    // Initialize services with user settings if userId is provided
-    if (userId) {
-      await Promise.all([
-        summaryService.initialize(userId),
-        keyPointsService.initialize(userId),
-        categoriesService.initialize(userId),
-        tagsService.initialize(userId),
-        sentimentService.initialize(userId),
-        titleService.initialize(userId),
-      ]);
+      // Initialize services with user settings if userId is provided
+      if (userId) {
+        await Promise.all([
+          summaryService.initialize(userId),
+          keyPointsService.initialize(userId),
+          categoriesService.initialize(userId),
+          tagsService.initialize(userId),
+          sentimentService.initialize(userId),
+          titleService.initialize(userId),
+        ]);
+      } else {
+        // Initialize with default settings if no userId provided
+        await Promise.all([
+          summaryService.initialize('default'),
+          keyPointsService.initialize('default'),
+          categoriesService.initialize('default'),
+          tagsService.initialize('default'),
+          sentimentService.initialize('default'),
+          titleService.initialize('default'),
+        ]);
+      }
+
+      this.services.set(AnalysisType.SUMMARY, summaryService);
+      this.services.set(AnalysisType.KEY_POINTS, keyPointsService);
+      this.services.set(AnalysisType.CATEGORIES, categoriesService);
+      this.services.set(AnalysisType.TAGS, tagsService);
+      this.services.set(AnalysisType.SENTIMENT, sentimentService);
+      this.services.set(AnalysisType.TITLE, titleService);
     }
-
-    this.services.set(AnalysisType.SUMMARY, summaryService);
-    this.services.set(AnalysisType.KEY_POINTS, keyPointsService);
-    this.services.set(AnalysisType.CATEGORIES, categoriesService);
-    this.services.set(AnalysisType.TAGS, tagsService);
-    this.services.set(AnalysisType.SENTIMENT, sentimentService);
-    this.services.set(AnalysisType.TITLE, titleService);
   }
 
   /**

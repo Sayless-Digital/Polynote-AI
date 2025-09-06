@@ -1,0 +1,26 @@
+module.exports = [
+"[project]/apps/web/src/lib/ai.ts [app-ssr] (ecmascript, async loader)", ((__turbopack_context__) => {
+
+__turbopack_context__.v((parentImport) => {
+    return Promise.all([
+  "server/chunks/ssr/node_modules_zod_v4_04cb8888._.js",
+  "server/chunks/ssr/[root-of-the-server]__4155015f._.js"
+].map((chunk) => __turbopack_context__.l(chunk))).then(() => {
+        return parentImport("[project]/apps/web/src/lib/ai.ts [app-ssr] (ecmascript)");
+    });
+});
+}),
+"[project]/node_modules/mermaid/dist/mermaid.core.mjs [app-ssr] (ecmascript, async loader)", ((__turbopack_context__) => {
+
+__turbopack_context__.v((parentImport) => {
+    return Promise.all([
+  "server/chunks/ssr/node_modules_d37b8196._.js",
+  "server/chunks/ssr/node_modules_mermaid_dist_5c38161e._.js",
+  "server/chunks/ssr/node_modules_lodash-es_5616f39e._.js",
+  "server/chunks/ssr/node_modules_af31184d._.js"
+].map((chunk) => __turbopack_context__.l(chunk))).then(() => {
+        return parentImport("[project]/node_modules/mermaid/dist/mermaid.core.mjs [app-ssr] (ecmascript)");
+    });
+});
+}),
+];

@@ -110,7 +110,7 @@ export default function MinimalHero({ onSignInClick, onLogInClick }: MinimalHero
   }, []);
 
   return (
-    <div className="font-primary relative min-h-screen w-full overflow-hidden bg-background/10 backdrop-blur-[1px] text-foreground">
+    <div className="font-primary relative min-h-screen w-full overflow-hidden bg-background text-foreground">
       <svg
         className="absolute inset-0 h-full w-full"
         xmlns="http://www.w3.org/2000/svg"

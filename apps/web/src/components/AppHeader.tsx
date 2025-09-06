@@ -36,8 +36,10 @@ export function AppHeader({ activeView, onViewChange, showNavigation = true }: A
   };
 
   return (
-    <header className="border-b/10 bg-background/5 backdrop-blur-[1px] flex-shrink-0 relative z-10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <header className="border-b flex-shrink-0 relative z-10">
+      {/* Gradient background that fades from background color to transparent */}
+      <div className="absolute inset-0 bg-gradient-to-b from-background to-transparent" />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         <div className="flex items-center h-16">
           {/* Left side - Logo */}
           <div className="flex items-center space-x-3 flex-shrink-0">

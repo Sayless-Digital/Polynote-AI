@@ -1,10 +1,11 @@
 import { BaseAnalysisService } from './BaseAnalysisService';
 import { AnalysisResult, AnalysisType, TitleAnalysisSchema } from '../types';
+import { generateObject } from 'ai';
 
 export class TitleAnalysisService extends BaseAnalysisService {
   readonly type = AnalysisType.TITLE;
   readonly priority = 1; // High priority (same as summary)
-  readonly timeout = 5000; // 5 seconds
+  readonly timeout = 3000; // 3 seconds - fail faster
 
   async analyze(content: string, context?: any): Promise<AnalysisResult> {
     const startTime = Date.now();
@@ -21,39 +22,59 @@ export class TitleAnalysisService extends BaseAnalysisService {
     }
 
     try {
-      const result = await this.executeWithTimeout(async () => {
-        const prompt = this.buildPrompt(content);
-        
-        const analysis = await generateObject({
-          model: this.model,
-          schema: TitleAnalysisSchema,
-          prompt,
-        });
+      let analysisResult: any;
+      let inputTokens = 0;
+      let outputTokens = 0;
 
-        return analysis.object;
-      });
+      const analysisData = await this.executeWithRetry(async () => {
+        return await this.executeWithTimeout(async () => {
+          const prompt = this.buildPrompt(content);
+          
+          const analysis = await generateObject({
+            model: this.model,
+            schema: TitleAnalysisSchema,
+            prompt,
+          });
+
+          // Extract token usage data
+          if (analysis.usage) {
+            inputTokens = analysis.usage.promptTokens || 0;
+            outputTokens = analysis.usage.completionTokens || 0;
+          }
+
+          analysisResult = analysis.object;
+          return analysisResult;
+        });
+      }, 1); // Only 1 retry attempt
 
       const processingTime = Date.now() - startTime;
-      const analysisResult = this.createBaseResult(
+      const result = this.createBaseResult(
         context?.noteId || 'unknown',
         'completed',
-        result,
+        analysisData,
         undefined,
         processingTime
       );
 
-      this.logMetrics(context?.noteId || 'unknown', processingTime, true);
-      return analysisResult;
+      this.logMetrics(context?.noteId || 'unknown', processingTime, true, undefined, context?.userId, inputTokens, outputTokens);
+      return result;
 
     } catch (error) {
       const processingTime = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       
+      // Check if it's a quota exceeded error
+      const isQuotaExceeded = error instanceof Error && 
+        (error.message.includes('quota') || 
+         error.message.includes('RESOURCE_EXHAUSTED') ||
+         error.message.includes('429') ||
+         error.message.includes('exceeded'));
+      
       const result = this.createBaseResult(
         context?.noteId || 'unknown',
         'failed',
         null,
-        errorMessage,
+        isQuotaExceeded ? 'API quota exceeded' : errorMessage,
         processingTime
       );
 

@@ -58,14 +58,28 @@ Make sure to actually analyze and summarize the content, not just repeat it.`;
     return result.object;
   } catch (error) {
     console.error('AI analysis failed, using fallback:', error);
-    // Fallback analysis
+    
+    // Check if it's a quota exceeded error
+    const isQuotaExceeded = error instanceof Error && 
+      (error.message.includes('quota') || 
+       error.message.includes('RESOURCE_EXHAUSTED') ||
+       error.message.includes('429'));
+    
+    if (isQuotaExceeded) {
+      console.warn('AI API quota exceeded, using enhanced fallback analysis');
+    }
+    
+    // Enhanced fallback analysis
+    const words = transcript.split(' ').filter(word => word.length > 0);
+    const firstSentence = transcript.split(/[.!?]/)[0] || transcript;
+    
     return {
-      title: transcript.split(' ').slice(0, 5).join(' ') + '...',
-      summary: transcript.length > 100 ? transcript.substring(0, 100) + '...' : transcript,
-      tags: ['note'],
+      title: words.slice(0, 6).join(' ') + (words.length > 6 ? '...' : ''),
+      summary: firstSentence.length > 150 ? firstSentence.substring(0, 150) + '...' : firstSentence,
+      tags: ['note', 'analysis'],
       categories: ['general'],
       sentiment: 'neutral',
-      keyPoints: [transcript],
+      keyPoints: words.length > 10 ? [words.slice(0, 10).join(' '), words.slice(10, 20).join(' ')].filter(Boolean) : [transcript],
     };
   }
 }

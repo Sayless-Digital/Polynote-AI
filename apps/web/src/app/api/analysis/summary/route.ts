@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SummaryAnalysisService } from '@/lib/analysis/services/SummaryAnalysisService';
+import { getCurrentUser } from '@/lib/auth';
 
 const summaryService = new SummaryAnalysisService();
 
 export async function POST(request: NextRequest) {
   try {
+    // Get the current user (optional for analysis)
+    const user = await getCurrentUser();
+    
     const body = await request.json();
     const { content, noteId } = body;
 
@@ -18,9 +22,20 @@ export async function POST(request: NextRequest) {
     console.log('Summary Analysis Request:', {
       noteId: noteId || 'unknown',
       contentLength: content.length,
+      userId: user?.id || 'anonymous',
     });
 
-    const result = await summaryService.analyze(content, { noteId });
+    // Initialize service with user settings if available
+    if (user?.id) {
+      await summaryService.initialize(user.id);
+    } else {
+      await summaryService.initialize('default');
+    }
+
+    const result = await summaryService.analyze(content, { 
+      noteId: noteId || 'unknown',
+      userId: user?.id 
+    });
 
     if (result.status === 'completed' && result.result) {
       console.log('Summary Analysis Completed:', {
@@ -32,10 +47,11 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        data: result.result,
+        summary: result.result.summary,
+        confidence: result.result.confidence,
         metadata: {
           processingTime: result.processingTime,
-          confidence: result.result.confidence,
+          analysisType: 'summary',
         },
       });
     } else {
@@ -60,4 +76,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

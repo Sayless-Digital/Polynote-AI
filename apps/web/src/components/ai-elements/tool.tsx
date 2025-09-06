@@ -7,7 +7,7 @@ import {
   CollapsibleTrigger,
 } from '@polynote/ui';
 import { cn } from '@/lib/utils';
-import type { ToolUIPart } from 'ai';
+import type { ToolUIPart } from '@/types/ai';
 import {
   CheckCircleIcon,
   ChevronDownIcon,

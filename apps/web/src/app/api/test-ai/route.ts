@@ -1,34 +1,40 @@
-import { NextResponse } from 'next/server';
-import { testAIConnection } from '@/lib/ai';
+import { NextRequest, NextResponse } from 'next/server';
+import { analyzeNote } from '@/lib/ai';
 
-export async function GET() {
+export async function POST(request: NextRequest) {
   try {
-    console.log('Testing AI connection from API endpoint...');
-    console.log('Environment check:', {
-      hasApiKey: !!process.env.GOOGLE_GENERATIVE_AI_API_KEY,
-      apiKeyLength: process.env.GOOGLE_GENERATIVE_AI_API_KEY?.length,
-      apiKeyPrefix: process.env.GOOGLE_GENERATIVE_AI_API_KEY?.substring(0, 10)
-    });
+    const body = await request.json();
+    const { content } = body;
 
-    const result = await testAIConnection();
+    if (!content?.trim()) {
+      return NextResponse.json(
+        { error: 'Content is required' },
+        { status: 400 }
+      );
+    }
+
+    console.log('🧪 Testing AI with content:', content.substring(0, 100) + '...');
+
+    // Test the AI analysis
+    const analysis = await analyzeNote(content);
+    
+    console.log('✅ AI Test successful:', analysis);
 
     return NextResponse.json({
       success: true,
-      aiConnection: result,
-      environment: {
-        hasApiKey: !!process.env.GOOGLE_GENERATIVE_AI_API_KEY,
-        apiKeyLength: process.env.GOOGLE_GENERATIVE_AI_API_KEY?.length
-      }
+      analysis,
+      message: 'AI test completed successfully'
     });
+
   } catch (error) {
-    console.error('AI test endpoint error:', error);
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      environment: {
-        hasApiKey: !!process.env.GOOGLE_GENERATIVE_AI_API_KEY,
-        apiKeyLength: process.env.GOOGLE_GENERATIVE_AI_API_KEY?.length
-      }
-    }, { status: 500 });
+    console.error('❌ AI Test failed:', error);
+    return NextResponse.json(
+      { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        message: 'AI test failed'
+      },
+      { status: 500 }
+    );
   }
 }

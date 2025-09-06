@@ -381,8 +381,8 @@ export function NotesList() {
   // Show error state
   if (error && !loading) {
     return (
-      <div className="h-full w-full p-4 overflow-hidden">
-        <Card className="h-full flex flex-col bg-background/5 backdrop-blur-[1px] border-border/10">
+      <div className="h-full w-full p-4 overflow-visible">
+        <Card className="h-full flex flex-col">
           <CardHeader className="flex-shrink-0">
             <CardTitle className="flex items-center gap-2">
               <Search className="w-5 h-5" />
@@ -444,8 +444,8 @@ export function NotesList() {
 
   if (showInitialLoading) {
     return (
-      <div className="h-full w-full p-4 overflow-hidden">
-        <Card className="h-full flex flex-col bg-background/5 backdrop-blur-[1px] border-border/10">
+      <div className="h-full w-full p-4 overflow-visible">
+        <Card className="h-full flex flex-col">
           <CardHeader className="flex-shrink-0">
             <CardTitle className="flex items-center gap-2">
               <Search className="w-5 h-5" />
@@ -455,7 +455,7 @@ export function NotesList() {
               Search and filter through your saved notes
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex-1 flex flex-col space-y-6 overflow-hidden">
+          <CardContent className="flex-1 flex flex-col space-y-6 overflow-visible">
             {/* Search and Filters Skeleton */}
             <div className="flex flex-col md:flex-row gap-4 flex-shrink-0">
               <Skeleton className="h-10 w-48" />
@@ -467,10 +467,10 @@ export function NotesList() {
             </div>
 
             {/* Table Skeleton */}
-            <div className="flex-1 border rounded-lg overflow-hidden flex flex-col">
+            <div className="flex-1 border rounded-lg overflow-visible flex flex-col">
               <div className="flex-1 overflow-auto">
                 <table className="w-full">
-                  <thead className="bg-muted/20 backdrop-blur-[1px]">
+                  <thead className="bg-muted/50">
                     <tr>
                       <th className="text-left p-4 font-medium">Title</th>
                       <th className="text-left p-4 font-medium">Tags</th>
@@ -499,8 +499,8 @@ export function NotesList() {
   }
 
   return (
-    <div className="h-full w-full p-4 overflow-hidden">
-      <Card className="h-full flex flex-col bg-background/5 backdrop-blur-[1px] border-border/10">
+    <div className="h-full w-full p-4 overflow-visible">
+      <Card className="h-full flex flex-col">
         <CardHeader className="flex-shrink-0">
           <CardTitle className="flex items-center gap-2">
             <Search className="w-5 h-5" />
@@ -510,7 +510,7 @@ export function NotesList() {
             Search and filter through your saved notes
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 flex flex-col space-y-6 overflow-hidden">
+        <CardContent className="flex-1 flex flex-col space-y-6 overflow-visible">
       {/* Search and Filters */}
           <div className="flex flex-col md:flex-row gap-4 flex-shrink-0">
             <div className="flex items-center gap-2">
@@ -518,7 +518,7 @@ export function NotesList() {
                 <DropdownMenuTrigger asChild>
                   <Button 
                     variant="outline" 
-                    className="w-48 px-4 justify-between h-10 border-border bg-background hover:bg-muted"
+                    className="w-48 px-4 justify-between h-10"
                     disabled={selectedNotes.size === 0}
                   >
                     <span className="flex items-center gap-2">
@@ -615,10 +615,10 @@ export function NotesList() {
 
 
           {/* Notes Table */}
-          <div className="flex-1 border rounded-lg overflow-hidden flex flex-col">
+          <div className="flex-1 border rounded-lg overflow-visible flex flex-col">
             <div className="flex-1 overflow-auto">
               <table className="w-full">
-                <thead className="bg-muted/20 backdrop-blur-[1px]">
+                <thead className="bg-muted/50">
                   <tr>
                     <th className="text-left p-4 font-medium w-12">
                       <Checkbox
@@ -643,7 +643,6 @@ export function NotesList() {
                             <Button 
                               onClick={() => fetchNotes(true)} 
                               variant="outline" 
-                              className="border-border bg-background hover:bg-muted"
                             >
                               Refresh
                             </Button>

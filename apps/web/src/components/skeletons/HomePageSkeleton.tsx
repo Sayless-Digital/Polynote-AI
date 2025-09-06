@@ -6,7 +6,7 @@ export function HomePageSkeleton() {
     <div className="h-full w-full flex items-center justify-center p-4">
       <div className="max-w-4xl w-full space-y-6">
         {/* Main content area skeleton */}
-        <Card className="bg-card border-border shadow-sm">
+        <Card className="shadow-sm">
           <CardHeader className="space-y-4">
             <Skeleton className="h-8 w-48" />
             <Skeleton className="h-4 w-64" />
@@ -22,7 +22,7 @@ export function HomePageSkeleton() {
 
         {/* Secondary content skeleton */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="bg-card border-border shadow-sm">
+          <Card className="shadow-sm">
             <CardHeader>
               <Skeleton className="h-6 w-32" />
             </CardHeader>
@@ -33,7 +33,7 @@ export function HomePageSkeleton() {
             </CardContent>
           </Card>
           
-          <Card className="bg-card border-border shadow-sm">
+          <Card className="shadow-sm">
             <CardHeader>
               <Skeleton className="h-6 w-28" />
             </CardHeader>

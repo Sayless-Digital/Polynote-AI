@@ -117,7 +117,7 @@ export default function ResetPasswordPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="max-w-md w-full mx-4">
-          <div className="bg-background/10 backdrop-blur-md border border-white/20 shadow-2xl rounded-lg p-8 text-center">
+          <div className="bg-background/10 backdrop-blur-md border border-border shadow-2xl rounded-lg p-8 text-center">
             <div className="flex flex-col items-center space-y-4 mb-6">
               {mounted && (
                 <Image
@@ -152,7 +152,7 @@ export default function ResetPasswordPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="max-w-md w-full mx-4">
-          <div className="bg-background/10 backdrop-blur-md border border-white/20 shadow-2xl rounded-lg p-8 text-center">
+          <div className="bg-background/10 backdrop-blur-md border border-border shadow-2xl rounded-lg p-8 text-center">
             <div className="flex flex-col items-center space-y-4 mb-6">
               {mounted && (
                 <Image
@@ -188,7 +188,7 @@ export default function ResetPasswordPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="max-w-md w-full mx-4">
-        <div className="bg-background/10 backdrop-blur-md border border-white/20 shadow-2xl rounded-lg p-8">
+        <div className="bg-background/10 backdrop-blur-md border border-border shadow-2xl rounded-lg p-8">
           <div className="flex flex-col items-center space-y-4 mb-6">
             {mounted && (
               <Image

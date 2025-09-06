@@ -1,9 +1,17 @@
 import { defineConfig } from 'drizzle-kit';
-import { config } from 'dotenv';
 import { resolve } from 'path';
 
-// Load environment variables from the root .env.local file
-config({ path: resolve(__dirname, '../../.env.local') });
+// Safely load environment variables only if not already loaded
+if (typeof process !== 'undefined' && !process.env.DATABASE_URL) {
+  try {
+    // Only import and configure dotenv if we're in a Node.js environment
+    // and DATABASE_URL is not already set
+    const { config } = require('dotenv');
+    config({ path: resolve(__dirname, '../../.env.local') });
+  } catch (error) {
+    console.warn('Could not load .env.local file:', error);
+  }
+}
 
 export default defineConfig({
   schema: './src/schema.ts',

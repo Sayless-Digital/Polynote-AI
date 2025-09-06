@@ -11,11 +11,31 @@ export default function SettingsPage() {
   const searchParams = useSearchParams();
   const { user, isAuthenticated, isLoading, signOut } = useAuth();
   const [shouldRedirect, setShouldRedirect] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // Handle URL parameters for refreshing
+  useEffect(() => {
+    const refresh = searchParams.get('refresh');
+    if (refresh === 'true') {
+      setRefreshKey(prev => prev + 1);
+      // Remove the refresh parameter from URL
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete('refresh');
+      const newUrl = params.toString() ? `?${params.toString()}` : '';
+      router.replace(`/settings${newUrl}`, { scroll: false });
+    }
+  }, [searchParams, router]);
 
   const handleViewChange = (view: 'take' | 'review' | 'chat') => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('view', view);
     router.push(`/?${params.toString()}`);
+  };
+
+  const handleRefresh = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('refresh', 'true');
+    router.push(`/settings?${params.toString()}`);
   };
 
   // Handle redirect logic
@@ -43,7 +63,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="h-screen w-screen bg-background/10 backdrop-blur-[1px] flex flex-col overflow-hidden">
+    <div className="h-screen w-screen bg-background flex flex-col overflow-visible">
       {/* Animated Background - Full Screen */}
       <div className="fixed inset-0 h-full w-full overflow-hidden pointer-events-none">
         {/* Primary gradient orb */}
@@ -66,7 +86,7 @@ export default function SettingsPage() {
       {/* Main Content */}
       <main className="flex-1 overflow-auto relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <AISettings />
+          <AISettings key={refreshKey} onRefresh={handleRefresh} />
         </div>
       </main>
     </div>

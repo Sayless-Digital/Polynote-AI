@@ -36,7 +36,7 @@ export function NotePageSkeleton() {
       </div>
 
       {/* AI Summary Skeleton */}
-      <Card className="bg-card border-border shadow-sm">
+      <Card className="shadow-sm">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
@@ -57,7 +57,7 @@ export function NotePageSkeleton() {
       </Card>
 
       {/* Main Content Skeleton */}
-      <Card className="bg-card border-border shadow-sm">
+      <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Skeleton className="h-5 w-5" />
@@ -81,7 +81,7 @@ export function NotePageSkeleton() {
       </Card>
 
       {/* Attachments Skeleton */}
-      <Card className="bg-card border-border shadow-sm">
+      <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Skeleton className="h-5 w-5" />
@@ -90,7 +90,7 @@ export function NotePageSkeleton() {
           <Skeleton className="h-3 w-48" />
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="border border-border rounded-md bg-card p-3">
+          <div className="border rounded-md bg-card p-3">
             <div className="flex items-center gap-3">
               <Skeleton className="h-4 w-4" />
               <div className="flex-1">

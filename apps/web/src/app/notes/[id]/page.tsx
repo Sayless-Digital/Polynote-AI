@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { AppHeader } from '@/components/AppHeader';
 import { useAuth } from '@/hooks/useAuth';
-import { ArrowLeft, Calendar, Tag, Save, Trash2, Bot, FileText, Download, ChevronDown, ChevronRight, PenTool, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Calendar, Tag, Save, Trash2, Bot, FileText, Download, ChevronDown, ChevronRight, PenTool, MessageSquare, Loader2 } from 'lucide-react';
 
 interface Attachment {
   id: string;
@@ -60,6 +60,7 @@ export default function ViewNotePage() {
   const [editedSummary, setEditedSummary] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>('idle');
+  const [isGenerating, setIsGenerating] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   
   // Auto-save
@@ -174,66 +175,100 @@ export default function ViewNotePage() {
     }
   }, [editedTitle, editedContent, editedSummary, note]);
 
+  // Generate AI title only
+  const generateTitle = useCallback(async (content: string) => {
+    try {
+      console.log('🔄 Generating AI title...');
+      
+      const response = await fetch('/api/analysis/title', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: content,
+          noteId: noteId,
+        }),
+      });
+
+      console.log('📊 Title API response status:', response.status, response.ok);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('📊 Title API response data:', data);
+        if (data.success && data.title) {
+          const newTitle = data.title.trim();
+          setEditedTitle(newTitle);
+          if (titleRef.current) {
+            titleRef.current.textContent = newTitle;
+          }
+          console.log('✅ AI-generated title set:', newTitle);
+          return newTitle;
+        } else {
+          console.error('❌ Title API returned success=false:', data);
+        }
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Title API failed:', response.status, errorData);
+      }
+    } catch (error) {
+      console.error('❌ Error generating title:', error);
+    }
+    return editedTitle;
+  }, [noteId, editedTitle]);
+
+  // Generate AI summary only
+  const generateSummary = useCallback(async (content: string) => {
+    try {
+      console.log('🔄 Generating AI summary...');
+      
+      const response = await fetch('/api/analysis/summary', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: content,
+          noteId: noteId,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.summary) {
+          const newSummary = data.summary.trim();
+          setEditedSummary(newSummary);
+          if (summaryRef.current) {
+            summaryRef.current.textContent = newSummary;
+          }
+          console.log('✅ AI-generated summary set:', newSummary);
+          return newSummary;
+        }
+      }
+    } catch (error) {
+      console.error('Error generating summary:', error);
+    }
+    return editedSummary;
+  }, [noteId, editedSummary]);
+
   // Auto-save function
   const saveNote = useCallback(async () => {
-    if (!note || !hasChanges) return;
+    if (!note || !hasChanges || isGenerating) return;
 
     try {
       setSaveState('saving');
       
-      // Always generate AI title and summary when saving
-      let finalTitle = editedTitle;
-      let finalSummary = editedSummary;
+      // Use current edited values - no automatic AI generation on save
+      const finalTitle = editedTitle;
+      const finalSummary = editedSummary;
+
+      console.log('💾 Saving note to database...', {
+        finalTitle,
+        editedContent: editedContent.substring(0, 100) + '...',
+        finalSummary: finalSummary?.substring(0, 100) + '...',
+        noteId
+      });
       
-      if (editedContent.trim()) {
-        try {
-          const analysisResponse = await fetch('/api/notes/analyze', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              content: editedContent,
-              title: editedTitle,
-            }),
-          });
-
-          if (analysisResponse.ok) {
-            try {
-              const contentType = analysisResponse.headers.get('content-type');
-              if (contentType && contentType.includes('application/json')) {
-                const analysis = await analysisResponse.json();
-                
-                // Always update title with AI-generated one
-                if (analysis.title && analysis.title.trim()) {
-                  finalTitle = analysis.title.trim();
-                  setEditedTitle(finalTitle);
-                  if (titleRef.current) {
-                    titleRef.current.textContent = finalTitle;
-                  }
-                }
-                
-                // Always update summary with AI-generated one
-                if (analysis.summary && analysis.summary.trim()) {
-                  finalSummary = analysis.summary.trim();
-                  setEditedSummary(finalSummary);
-                  if (summaryRef.current) {
-                    summaryRef.current.textContent = finalSummary;
-                  }
-                }
-              } else {
-                console.warn('AI analysis returned non-JSON response');
-              }
-            } catch (parseError) {
-              console.warn('Failed to parse AI analysis response:', parseError);
-            }
-          }
-        } catch (aiError) {
-          console.error('Error generating AI title and summary:', aiError);
-          // Continue with original values if AI fails
-        }
-      }
-
       const response = await fetch(`/api/notes/${noteId}`, {
         method: 'PUT',
         headers: {
@@ -251,6 +286,11 @@ export default function ViewNotePage() {
           const contentType = response.headers.get('content-type');
           if (contentType && contentType.includes('application/json')) {
             const updatedNote = await response.json();
+            console.log('✅ Note saved successfully:', {
+              id: updatedNote.id,
+              title: updatedNote.title,
+              updatedAt: updatedNote.updatedAt
+            });
             setNote(updatedNote);
             lastSavedRef.current = { title: finalTitle, content: editedContent };
             setHasChanges(false);
@@ -269,19 +309,21 @@ export default function ViewNotePage() {
           setTimeout(() => setSaveState('idle'), 3000);
         }
       } else {
+        console.error('❌ Save failed with status:', response.status);
         setSaveState('error');
         setTimeout(() => setSaveState('idle'), 3000);
       }
     } catch (err) {
       console.error('Error saving note:', err);
+      console.log('⚠️ Save failed, resetting to idle state');
       setSaveState('error');
       setTimeout(() => setSaveState('idle'), 3000);
     }
-  }, [note, noteId, editedTitle, editedContent, editedSummary, hasChanges]);
+  }, [note, noteId, editedTitle, editedContent, editedSummary, hasChanges, isGenerating]);
 
-  // Auto-save with debouncing
+  // Auto-save with debouncing (but not during generation)
   useEffect(() => {
-    if (hasChanges) {
+    if (hasChanges && !isGenerating) {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
@@ -296,7 +338,7 @@ export default function ViewNotePage() {
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [hasChanges, saveNote]);
+  }, [hasChanges, isGenerating, saveNote]);
 
   // Manual save function
   const handleManualSave = () => {
@@ -306,56 +348,51 @@ export default function ViewNotePage() {
     saveNote();
   };
 
-  // Regenerate summary using AI
+  // Regenerate summary using AI (separate API call)
   const handleRegenerateSummary = async () => {
-    if (!note) return;
+    if (!note || !editedContent.trim() || isGenerating) return;
     
     try {
-      setSaveState('saving');
-      const response = await fetch('/api/notes/analyze', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          content: editedContent,
-          title: editedTitle,
-        }),
-      });
-
-      if (response.ok) {
-        try {
-          const contentType = response.headers.get('content-type');
-          if (contentType && contentType.includes('application/json')) {
-            const analysis = await response.json();
-            const newSummary = analysis.summary || '';
-            setEditedSummary(newSummary);
-            if (summaryRef.current) {
-              summaryRef.current.textContent = newSummary;
-            }
-            setHasChanges(true);
-          } else {
-            console.error('Failed to generate summary: non-JSON response');
-          }
-        } catch (parseError) {
-          console.error('Failed to parse summary response:', parseError);
-        }
-      } else {
-        console.error('Failed to generate summary');
+      setIsGenerating(true);
+      const newSummary = await generateSummary(editedContent);
+      if (newSummary !== editedSummary) {
+        setHasChanges(true);
       }
     } catch (error) {
       console.error('Error generating summary:', error);
     } finally {
-      setSaveState('idle');
+      setIsGenerating(false);
     }
   };
 
-  // Generate title using AI
+  // Generate title using AI (separate API call)
   const handleGenerateTitle = async () => {
-    if (!editedContent.trim()) return;
+    if (!editedContent.trim() || isGenerating) return;
     
     try {
-      setSaveState('saving');
+      setIsGenerating(true);
+      console.log('🔄 Calling generateTitle function...');
+      const newTitle = await generateTitle(editedContent);
+      console.log('✅ generateTitle returned:', newTitle);
+      if (newTitle !== editedTitle) {
+        setHasChanges(true);
+      }
+    } catch (error) {
+      console.error('❌ Error generating title:', error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Regenerate all AI analysis
+  const handleRegenerateAll = async () => {
+    if (!editedContent.trim() || isGenerating) return;
+    
+    try {
+      setIsGenerating(true);
+      console.log('🔄 Regenerating all AI analysis...');
+      
+      // Use the comprehensive analysis API that generates everything at once
       const response = await fetch('/api/notes/analyze', {
         method: 'POST',
         headers: {
@@ -363,36 +400,72 @@ export default function ViewNotePage() {
         },
         body: JSON.stringify({
           content: editedContent,
-          title: editedTitle,
+          noteId: noteId,
         }),
       });
 
+      console.log('📊 Analysis API response status:', response.status, response.ok);
+
       if (response.ok) {
-        try {
-          const contentType = response.headers.get('content-type');
-          if (contentType && contentType.includes('application/json')) {
-            const analysis = await response.json();
-            if (analysis.title && analysis.title.trim()) {
-              const newTitle = analysis.title.trim();
-              setEditedTitle(newTitle);
-              if (titleRef.current) {
-                titleRef.current.textContent = newTitle;
-              }
-              setHasChanges(true);
-            }
-          } else {
-            console.error('Failed to generate title: non-JSON response');
+        const data = await response.json();
+        console.log('📊 Analysis API response data:', data);
+        
+        // The API returns the analysis directly
+        const analysis = data;
+        console.log('🔍 Analysis data:', analysis);
+        
+        // Update title if generated
+        if (analysis.title && analysis.title !== editedTitle) {
+          setEditedTitle(analysis.title);
+          if (titleRef.current) {
+            titleRef.current.textContent = analysis.title;
           }
-        } catch (parseError) {
-          console.error('Failed to parse title response:', parseError);
+          console.log('✅ Title updated:', analysis.title);
         }
+        
+        // Update summary if generated
+        if (analysis.summary && analysis.summary !== editedSummary) {
+          setEditedSummary(analysis.summary);
+          if (summaryRef.current) {
+            summaryRef.current.textContent = analysis.summary;
+          }
+          console.log('✅ Summary updated:', analysis.summary.substring(0, 100) + '...');
+        }
+        
+        // Update note with all other analysis data
+        if (note) {
+          const updatedNote = {
+            ...note,
+            title: analysis.title || note.title,
+            summary: analysis.summary || note.summary,
+            tags: analysis.tags || note.tags,
+            categories: analysis.categories || note.categories,
+            metadata: {
+              ...note.metadata,
+              keyPoints: analysis.keyPoints || note.metadata?.keyPoints,
+              sentiment: analysis.sentiment || note.metadata?.sentiment,
+            }
+          };
+          console.log('🔄 Updating note with new analysis:', {
+            newTags: analysis.tags,
+            newCategories: analysis.categories,
+            newSentiment: analysis.sentiment,
+            newKeyPoints: analysis.keyPoints,
+            updatedNote: updatedNote
+          });
+          setNote(updatedNote);
+        }
+        
+        setHasChanges(true);
+        console.log('✅ All AI analysis regenerated successfully');
       } else {
-        console.error('Failed to generate title');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Failed to regenerate all analysis:', response.status, errorData);
       }
     } catch (error) {
-      console.error('Error generating title:', error);
+      console.error('❌ Error regenerating all analysis:', error);
     } finally {
-      setSaveState('idle');
+      setIsGenerating(false);
     }
   };
 
@@ -402,19 +475,17 @@ export default function ViewNotePage() {
       switch (saveState) {
         case 'saving':
           return {
-            variant: 'default' as const,
-            className: 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-600 dark:text-blue-400 animate-pulse backdrop-blur-[1px] border border-blue-200/30',
+            variant: 'outline' as const,
             children: (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 dark:border-blue-400 mr-2 flex-shrink-0"></div>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2 flex-shrink-0"></div>
                 <span>Saving...</span>
               </>
             ),
           };
         case 'saved':
           return {
-            variant: 'default' as const,
-            className: 'bg-green-500/20 hover:bg-green-500/30 text-green-600 dark:text-green-400 backdrop-blur-[1px] border border-green-200/30',
+            variant: 'outline' as const,
             children: (
               <>
                 <Save className="h-4 w-4 mr-2 flex-shrink-0" />
@@ -425,7 +496,6 @@ export default function ViewNotePage() {
         case 'error':
           return {
             variant: 'destructive' as const,
-            className: 'bg-red-500/20 hover:bg-red-500/30 text-red-600 dark:text-red-400 backdrop-blur-[1px] border border-red-200/30',
             children: (
               <>
                 <Save className="h-4 w-4 mr-2 flex-shrink-0" />
@@ -435,10 +505,7 @@ export default function ViewNotePage() {
           };
         default:
           return {
-            variant: hasChanges ? ('default' as const) : ('outline' as const),
-            className: hasChanges 
-              ? 'bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-600 dark:text-yellow-400 backdrop-blur-[1px] border border-yellow-200/30' 
-              : 'text-muted-foreground bg-background/5 backdrop-blur-[1px] border border-border/10',
+            variant: hasChanges ? 'default' as const : 'outline' as const,
             children: (
               <>
                 <Save className="h-4 w-4 mr-2 flex-shrink-0" />
@@ -457,7 +524,7 @@ export default function ViewNotePage() {
         size="sm"
         onClick={handleManualSave}
         disabled={!hasChanges && saveState === 'idle'}
-        className={`${buttonProps.className} h-8 min-h-[2rem] flex items-center justify-center`}
+        className="h-8 min-h-[2rem] flex items-center justify-center"
       >
         {buttonProps.children}
       </Button>
@@ -489,7 +556,7 @@ export default function ViewNotePage() {
 
   if (error || !note) {
     return (
-      <div className="h-screen w-screen bg-background/10 backdrop-blur-[1px] flex flex-col overflow-hidden">
+      <div className="h-screen w-screen bg-background/10 backdrop-blur-[1px] flex flex-col overflow-visible">
         <AppHeader onViewChange={handleNavigation} />
 
         {/* Main Content */}
@@ -502,7 +569,7 @@ export default function ViewNotePage() {
               <h1 className="text-2xl font-bold">Error</h1>
             </div>
             
-            <Card className="bg-background/5 backdrop-blur-[1px] border-border/10 shadow-sm">
+            <Card className="shadow-sm">
               <CardContent className="p-8 text-center">
                 <p className="text-muted-foreground mb-4">
                   {error || 'Note not found'}
@@ -520,7 +587,7 @@ export default function ViewNotePage() {
   }
 
   return (
-    <div className="h-screen w-screen bg-background/10 backdrop-blur-[1px] flex flex-col overflow-hidden relative">
+    <div className="h-screen w-screen bg-background flex flex-col overflow-visible relative">
       {/* Animated Background - Full Screen */}
       <div className="fixed inset-0 h-full w-full overflow-hidden pointer-events-none">
         {/* Primary gradient orb */}
@@ -611,10 +678,27 @@ export default function ViewNotePage() {
                   variant="outline" 
                   size="sm"
                   onClick={handleGenerateTitle}
-                  disabled={saveState === 'saving'}
+                  disabled={saveState === 'saving' || isGenerating}
                 >
-                  <Bot className="h-4 w-4 mr-2" />
-                  Generate Title
+                  {isGenerating ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Bot className="h-4 w-4 mr-2" />
+                  )}
+                  {isGenerating ? 'Generating...' : 'Generate Title'}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleRegenerateAll}
+                  disabled={saveState === 'saving' || isGenerating}
+                >
+                  {isGenerating ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Bot className="h-4 w-4 mr-2" />
+                  )}
+                  {isGenerating ? 'Regenerating All...' : 'Regenerate All'}
                 </Button>
                 <SaveButton />
                 <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -624,7 +708,7 @@ export default function ViewNotePage() {
                       Delete
                     </Button>
                   </DialogTrigger>
-                <DialogContent className="bg-background/5 backdrop-blur-[1px] border-border/10 shadow-sm">
+                <DialogContent className="shadow-sm">
                   <DialogHeader>
                     <DialogTitle>Delete Note</DialogTitle>
                     <DialogDescription>
@@ -682,7 +766,7 @@ export default function ViewNotePage() {
         )}
 
         {/* AI Summary */}
-        <Card className="bg-background/5 backdrop-blur-[1px] border-border/10 shadow-sm">
+        <Card className="shadow-sm">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg flex items-center gap-2">
@@ -693,10 +777,14 @@ export default function ViewNotePage() {
                 variant="outline" 
                 size="sm"
                 onClick={handleRegenerateSummary}
-                disabled={saveState === 'saving'}
+                disabled={saveState === 'saving' || isGenerating}
               >
-                <Bot className="h-4 w-4 mr-2" />
-                Regenerate
+                {isGenerating ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Bot className="h-4 w-4 mr-2" />
+                )}
+                {isGenerating ? 'Generating...' : 'Regenerate'}
               </Button>
             </div>
           </CardHeader>
@@ -742,7 +830,7 @@ export default function ViewNotePage() {
         </Card>
 
         {/* Main Content */}
-        <Card className="bg-background/5 backdrop-blur-[1px] border-border/10 shadow-sm">
+        <Card className="shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg">Content</CardTitle>
             <CardDescription className="text-xs text-muted-foreground">
@@ -797,7 +885,7 @@ export default function ViewNotePage() {
 
         {/* File Attachments */}
         {note.attachments && note.attachments.length > 0 && (
-          <Card className="bg-background/5 backdrop-blur-[1px] border-border/10 shadow-sm">
+          <Card className="shadow-sm">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <FileText className="h-5 w-5" />
@@ -857,7 +945,7 @@ export default function ViewNotePage() {
 
         {/* Transcript */}
         {note.transcript && (
-          <Card className="bg-background/5 backdrop-blur-[1px] border-border/10 shadow-sm">
+          <Card className="shadow-sm">
             <CardHeader>
               <CardTitle className="text-lg">Transcript</CardTitle>
               <CardDescription>
@@ -876,10 +964,25 @@ export default function ViewNotePage() {
 
         {/* Metadata */}
         {note.metadata && (
-          <Card className="bg-background/5 backdrop-blur-[1px] border-border/10 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-lg">Analysis</CardTitle>
-            </CardHeader>
+            <Card className="shadow-sm">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Analysis</CardTitle>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleRegenerateAll}
+                    disabled={saveState === 'saving' || isGenerating}
+                  >
+                    {isGenerating ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Bot className="h-4 w-4 mr-2" />
+                    )}
+                    {isGenerating ? 'Regenerating...' : 'Regenerate All'}
+                  </Button>
+                </div>
+              </CardHeader>
             <CardContent className="space-y-4">
               {note.metadata.sentiment && (
                 <div>

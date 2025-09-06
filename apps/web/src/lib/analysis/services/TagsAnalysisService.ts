@@ -1,5 +1,6 @@
 import { BaseAnalysisService } from './BaseAnalysisService';
 import { AnalysisResult, AnalysisType, TagsAnalysisSchema } from '../types';
+import { generateObject } from 'ai';
 
 export class TagsAnalysisService extends BaseAnalysisService {
   readonly type = AnalysisType.TAGS;
@@ -21,7 +22,11 @@ export class TagsAnalysisService extends BaseAnalysisService {
     }
 
     try {
-      const result = await this.executeWithTimeout(async () => {
+      let analysisResult: any;
+      let inputTokens = 0;
+      let outputTokens = 0;
+
+      const analysisData = await this.executeWithTimeout(async () => {
         const prompt = this.buildPrompt(content);
         
         const analysis = await generateObject({
@@ -30,20 +35,27 @@ export class TagsAnalysisService extends BaseAnalysisService {
           prompt,
         });
 
-        return analysis.object;
+        // Extract token usage data
+        if (analysis.usage) {
+          inputTokens = analysis.usage.promptTokens || 0;
+          outputTokens = analysis.usage.completionTokens || 0;
+        }
+
+        analysisResult = analysis.object;
+        return analysisResult;
       });
 
       const processingTime = Date.now() - startTime;
-      const analysisResult = this.createBaseResult(
+      const result = this.createBaseResult(
         context?.noteId || 'unknown',
         'completed',
-        result,
+        analysisData,
         undefined,
         processingTime
       );
 
-      this.logMetrics(context?.noteId || 'unknown', processingTime, true);
-      return analysisResult;
+      this.logMetrics(context?.noteId || 'unknown', processingTime, true, undefined, context?.userId, inputTokens, outputTokens);
+      return result;
 
     } catch (error) {
       const processingTime = Date.now() - startTime;

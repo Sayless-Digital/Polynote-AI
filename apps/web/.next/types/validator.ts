@@ -77,6 +77,12 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   handler satisfies AppPageConfig<"/verify-email">
 }
 
+// Validate ../../src/app/api/ai-settings/models/route.ts
+{
+  const handler = {} as typeof import("../../src/app/api/ai-settings/models/route.js")
+  handler satisfies RouteHandlerConfig<"/api/ai-settings/models">
+}
+
 // Validate ../../src/app/api/ai-settings/route.ts
 {
   const handler = {} as typeof import("../../src/app/api/ai-settings/route.js")
@@ -111,6 +117,12 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
 {
   const handler = {} as typeof import("../../src/app/api/analysis/summary/route.js")
   handler satisfies RouteHandlerConfig<"/api/analysis/summary">
+}
+
+// Validate ../../src/app/api/analysis/title/route.ts
+{
+  const handler = {} as typeof import("../../src/app/api/analysis/title/route.js")
+  handler satisfies RouteHandlerConfig<"/api/analysis/title">
 }
 
 // Validate ../../src/app/api/auth/forgot-password/route.ts

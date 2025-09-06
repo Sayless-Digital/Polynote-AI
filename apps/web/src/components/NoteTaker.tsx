@@ -99,7 +99,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
       <div className={cn('relative', containerClassName)}>
         <textarea
           className={cn(
-            'border-white/20 bg-background/10 backdrop-blur-md flex min-h-[80px] w-full rounded-md border px-3 py-2 text-sm',
+            'border-border bg-background/10 backdrop-blur-md flex min-h-[80px] w-full rounded-md border px-3 py-2 text-sm',
             'transition-all duration-200 ease-in-out',
             'placeholder:text-muted-foreground',
             'disabled:cursor-not-allowed disabled:opacity-50',
@@ -336,9 +336,79 @@ const router = useRouter();
 
         // Use Gemini AI to analyze the transcript
         try {
-          // Import the AI function dynamically to avoid SSR issues
-          const { analyzeNote } = await import('@/lib/ai');
-          const analysis = await analyzeNote(mockTranscript);
+          // Call the API endpoint instead of importing server-side code
+          const response = await fetch('/api/notes/analyze', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              content: mockTranscript,
+            }),
+          });
+
+          if (!response.ok) {
+            if (response.status === 429) {
+              // Handle quota exceeded error
+              try {
+                const errorData = await response.json();
+                if (errorData.quotaExceeded && errorData.fallback) {
+                  console.warn('API quota exceeded, using fallback analysis');
+                  
+                  setTitle(errorData.fallback.title || "Voice Note");
+                  setTags(errorData.fallback.tags || ["note"]);
+                  setCategories(errorData.fallback.categories || ["general"]);
+                  
+                  // Show quota exceeded notification
+                  const notification = document.createElement('div');
+                  notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: #fef3c7;
+                    border: 1px solid #f59e0b;
+                    border-radius: 8px;
+                    padding: 16px;
+                    max-width: 400px;
+                    z-index: 1000;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                    font-family: system-ui, -apple-system, sans-serif;
+                  `;
+                  notification.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <span style="font-size: 20px;">⚠️</span>
+                      <div>
+                        <div style="font-weight: 600; color: #92400e; margin-bottom: 4px;">API Quota Exceeded</div>
+                        <div style="color: #78350f; font-size: 14px;">Using basic analysis. Check your API key limits or try again later.</div>
+                      </div>
+                      <button onclick="this.parentElement.parentElement.remove()" style="
+                        background: none;
+                        border: none;
+                        font-size: 18px;
+                        cursor: pointer;
+                        color: #92400e;
+                        margin-left: auto;
+                      ">×</button>
+                    </div>
+                  `;
+                  document.body.appendChild(notification);
+                  
+                  setTimeout(() => {
+                    if (notification.parentElement) {
+                      notification.remove();
+                    }
+                  }, 10000);
+                  
+                  return;
+                }
+              } catch (parseError) {
+                console.warn('Failed to parse quota error response:', parseError);
+              }
+            }
+            throw new Error(`Analysis failed: ${response.status}`);
+          }
+
+          const analysis = await response.json();
           console.log('AI analysis completed:', analysis);
 
           setTitle(analysis.title);
@@ -593,6 +663,26 @@ const router = useRouter();
       
       console.log('About to send this exact content to AI:', combinedContent);
       
+      // First, test if AI is working with a simple test
+      console.log('🧪 Testing AI endpoint first...');
+      try {
+        const testResponse = await fetch('/api/test-ai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: 'This is a test note for AI analysis.' }),
+        });
+        
+        if (testResponse.ok) {
+          const testData = await testResponse.json();
+          console.log('✅ AI Test successful:', testData);
+        } else {
+          console.error('❌ AI Test failed:', testResponse.status, await testResponse.text());
+        }
+      } catch (testError) {
+        console.error('❌ AI Test error:', testError);
+      }
+      
+      console.log('🔄 Calling analysis API...');
       const analysisResponse = await fetch('/api/notes/analyze', {
         method: 'POST',
         headers: {
@@ -603,27 +693,49 @@ const router = useRouter();
         }),
       });
 
+      console.log('📊 Analysis API response status:', analysisResponse.status, analysisResponse.ok);
+
       if (!analysisResponse.ok) {
         let errorMessage = 'Failed to analyze note';
+        let errorDetails = '';
         try {
           const contentType = analysisResponse.headers.get('content-type');
           if (contentType && contentType.includes('application/json')) {
             const errorData: { error?: string } = await analysisResponse.json();
             errorMessage = errorData.error || errorMessage;
+            errorDetails = JSON.stringify(errorData);
+          } else {
+            errorDetails = await analysisResponse.text();
           }
         } catch (parseError) {
-          console.warn('Failed to parse analysis error response as JSON:', parseError);
+          console.warn('Failed to parse analysis error response:', parseError);
+          errorDetails = 'Could not parse error response';
         }
-        throw new Error(errorMessage);
+        console.error('❌ Analysis API failed:', {
+          status: analysisResponse.status,
+          statusText: analysisResponse.statusText,
+          errorMessage,
+          errorDetails
+        });
+        throw new Error(`${errorMessage} (Status: ${analysisResponse.status})`);
       }
 
       const analysis = await analysisResponse.json();
+      console.log('✅ AI Analysis received:', analysis);
       
       // Step 7: Saving note
       setThinkingState('Saving note...');
       await new Promise(resolve => setTimeout(resolve, 300));
       
       // Create the note with attachments
+      console.log('💾 Creating note with data:', {
+        title: analysis.title,
+        contentLength: content.length,
+        tags: analysis.tags,
+        categories: analysis.categories,
+        attachmentsCount: uploadedFiles.length
+      });
+      
       const response = await fetch('/api/notes', {
         method: 'POST',
         headers: {
@@ -638,6 +750,8 @@ const router = useRouter();
           aiAnalysis: analysis, // Send the complete AI analysis result
         }),
       });
+
+      console.log('📊 Note creation response status:', response.status, response.ok);
 
       if (!response.ok) {
         let errorMessage = 'Failed to save note';
@@ -654,6 +768,7 @@ const router = useRouter();
       }
 
       const savedNote = await response.json();
+      console.log('✅ Note saved successfully:', savedNote);
       
       // Step 8: Finalizing
       setThinkingState('Finalizing...');
@@ -663,6 +778,7 @@ const router = useRouter();
       setAttachments([]);
       
       // Navigate to the saved note
+      console.log('🧭 Navigating to note:', savedNote.id);
       router.push(`/notes/${savedNote.id}`);
       
     } catch (error) {
@@ -712,8 +828,8 @@ const router = useRouter();
 
 
   return (
-    <div className="h-full w-full p-4 overflow-hidden">
-      <Card className="h-full flex flex-col relative bg-background/5 backdrop-blur-[1px] border-border/10">
+    <div className="h-full w-full p-4 overflow-visible">
+      <Card className="h-full flex flex-col relative">
         <div className="flex-1 flex flex-col space-y-6 overflow-visible relative z-10 p-6">
           
           <div className="flex w-full overflow-visible flex-1 items-center justify-center">
@@ -752,7 +868,7 @@ const router = useRouter();
                     </motion.p>
             </div>
                   <motion.div
-                    className="bg-background/15 backdrop-blur-[1px] border-border/50 relative rounded-2xl border shadow-sm"
+                    className="bg-card relative rounded-lg border shadow-sm"
                     initial={{ scale: 0.98 }}
                     animate={{ scale: 1 }}
                     transition={{ delay: 0.1 }}
@@ -807,13 +923,13 @@ const router = useRouter();
                         </motion.div>
                       )}
                     </AnimatePresence>
-                    <div className="border-border/10 flex items-center justify-between gap-4 border-t p-4">
+                    <div className="flex items-center justify-between gap-4 border-t p-4">
                       <div className="flex items-center gap-3">
                         <motion.button
                           type="button"
                           onClick={handleAttachFile}
                           whileTap={{ scale: 0.94 }}
-                          className="group text-muted-foreground hover:text-foreground relative rounded-lg p-2 transition-colors bg-background/5 backdrop-blur-[1px] border border-border/10"
+                          className="group text-muted-foreground hover:text-foreground relative rounded-md p-2 transition-colors bg-secondary border"
                         >
                           <Paperclip className="h-4 w-4" />
                           <motion.span
@@ -831,10 +947,10 @@ const router = useRouter();
                         className={cn(
                           'rounded-lg px-4 py-2 text-sm font-medium transition-all',
                           'flex items-center gap-2',
-                          'backdrop-blur-[1px] border border-border/10',
+                          'border',
                           value.trim()
-                            ? 'bg-primary text-primary-foreground shadow-primary/10 shadow-lg'
-                            : 'bg-background/5 text-muted-foreground',
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-secondary text-muted-foreground',
                         )}
                       >
                         {isTyping ? (
@@ -851,7 +967,7 @@ const router = useRouter();
               <AnimatePresence>
                 {isTyping && (
                   <motion.div
-                    className="border-border/10 bg-background/5 fixed bottom-8 left-1/2 -translate-x-1/2 transform rounded-full border px-4 py-2 shadow-sm backdrop-blur-[1px]"
+                    className="bg-card fixed bottom-8 left-1/2 -translate-x-1/2 transform rounded-full border px-4 py-2 shadow-sm"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 20 }}
